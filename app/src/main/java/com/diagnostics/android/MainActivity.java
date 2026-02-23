@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -98,15 +100,49 @@ public class MainActivity extends AppCompatActivity {
         // Network Information
         diagnostics.append("=== NETWORK INFORMATION ===\n\n");
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
-        boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+        
+        boolean isConnected = false;
+        String networkType = "None";
+        String networkSubtype = "N/A";
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // Use newer API for Android 6.0 and above
+            Network activeNetwork = connectivityManager.getActiveNetwork();
+            if (activeNetwork != null) {
+                NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
+                if (capabilities != null) {
+                    isConnected = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                                  capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+                    
+                    if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                        networkType = "WiFi";
+                    } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                        networkType = "Cellular";
+                    } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                        networkType = "Ethernet";
+                    } else {
+                        networkType = "Other";
+                    }
+                }
+            }
+        } else {
+            // Fallback to deprecated API for older versions
+            NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+            isConnected = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+            if (isConnected) {
+                networkType = activeNetworkInfo.getTypeName();
+                networkSubtype = activeNetworkInfo.getSubtypeName();
+            }
+        }
         
         diagnostics.append("Network Connected: ").append(isConnected ? "Yes" : "No").append("\n");
         if (isConnected) {
-            diagnostics.append("Network Type: ").append(activeNetwork.getTypeName()).append("\n");
-            diagnostics.append("Network Subtype: ").append(activeNetwork.getSubtypeName()).append("\n");
+            diagnostics.append("Network Type: ").append(networkType).append("\n");
+            if (!networkSubtype.equals("N/A")) {
+                diagnostics.append("Network Subtype: ").append(networkSubtype).append("\n");
+            }
             
-            if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI) {
+            if (networkType.equals("WiFi") || networkType.equals("WIFI")) {
                 WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
                 WifiInfo wifiInfo = wifiManager.getConnectionInfo();
                 diagnostics.append("WiFi SSID: ").append(wifiInfo.getSSID()).append("\n");

@@ -55,7 +55,6 @@ A comprehensive diagnostic application for Android devices that displays detaile
 The app requires the following permissions:
 - `ACCESS_NETWORK_STATE`: To read network connection status
 - `ACCESS_WIFI_STATE`: To read WiFi information
-- `BATTERY_STATS`: To read battery information
 - `INTERNET`: For potential future network diagnostics
 
 ## License
