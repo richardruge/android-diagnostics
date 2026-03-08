@@ -6,6 +6,7 @@ configurations.all {
         force("androidx.activity:activity-ktx:1.10.0")
         force("androidx.activity:activity-compose:1.10.0")
     }
+    exclude(group = "com.intellij", module = "annotations")
 }
 
 plugins {

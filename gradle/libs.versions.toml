@@ -1,6 +1,6 @@
 [versions]
 agp = "9.0.0"
-coreKtx = "1.10.1"
+coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
@@ -14,9 +14,13 @@ material = "1.10.0"
 hilt = "2.51.1"
 runtime = "1.10.1"
 material3 = "1.4.0"
-coreKtxVersion = "1.17.0"
+coreKtxVersion = "1.15.0"
 koin = "4.1.1"
 ksp = "2.0.0-1.0.21"
+roomCompiler = "2.8.4"
+roomKtx = "2.8.4"
+uiGraphics = "1.10.4"
+vico = "2.4.3"
 
 [libraries]
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
@@ -54,6 +58,13 @@ core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtxV
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+
+vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
+vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
+vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }

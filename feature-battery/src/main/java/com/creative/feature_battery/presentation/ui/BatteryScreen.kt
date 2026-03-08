@@ -1,31 +1,52 @@
 package com.creative.feature_battery.presentation.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.creative.feature_battery.presentation.BatteryUiState
+import com.creative.feature_battery.presentation.BatteryViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun BatteryScreen(
     viewModel: BatteryViewModel = koinViewModel()
 ) {
-    val state by viewModel.state.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center
+    when (uiState) {
+        is BatteryUiState.Loading -> LoadingView()
+        is BatteryUiState.Ready -> BatteryContent(uiState as BatteryUiState.Ready)
+    }
+}
+
+@Composable
+private fun LoadingView() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        when {
-            state.loading -> Text("Reading battery temperature…")
-            state.error != null -> Text("Error: ${state.error}")
-            else -> Text("Battery Temp: ${state.temperatureC} °C")
-        }
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun BatteryContent(state: BatteryUiState.Ready) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text("Battery Level: ${state.level}%")
+        Text("Temperature: ${state.temperatureC}°C")
+        Text("Charging: ${state.isCharging}")
+        Text("Health: ${state.health}")
+        Text("Severity: ${state.severity}")
+        state.capacityMah?.let { Text("Capacity: $it mAh") }
+        state.voltageMv?.let { Text("Voltage: $it mV") }
+        state.technology?.let { Text("Tech: $it") }
     }
 }
