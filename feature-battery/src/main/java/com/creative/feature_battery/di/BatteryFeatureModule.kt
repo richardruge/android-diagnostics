@@ -34,8 +34,8 @@ val batteryFeatureModule = module {
         )
     }
 
-    // Main battery repository
-    single<BatteryRepository> { 
+    // Main battery repository - Set to create at start to begin recording immediately
+    single<BatteryRepository>(createdAtStart = true) {
         BatteryRepositoryImpl(
             provider = get(),
             historyRepository = get()

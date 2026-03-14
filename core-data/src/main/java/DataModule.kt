@@ -21,7 +21,7 @@ val dataModule = module {
     }
 
     single<ThermalRepository> {
-        ThermalRepositoryImpl(get())
+        ThermalRepositoryImpl(get(), get())
     }
 
     single<AutomationRepository> {

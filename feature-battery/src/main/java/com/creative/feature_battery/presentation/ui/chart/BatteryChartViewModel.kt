@@ -8,6 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 
 class BatteryChartViewModel(
@@ -31,6 +32,8 @@ class BatteryChartViewModel(
             emit(thermalRepository.getThermalStatus())
             delay(5000)
         }
+    }.onStart {
+        emit(thermalRepository.getThermalStatus())
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
