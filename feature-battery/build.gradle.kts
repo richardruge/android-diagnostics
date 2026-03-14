@@ -2,8 +2,8 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.ksp)
 }
-
 
 android {
     namespace = "com.creative.feature_battery"
@@ -45,14 +45,24 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
     implementation(projects.coreSystem)
+    implementation(projects.coreData)
+    implementation(projects.coreModel)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+
+    // Compose
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.room.compiler)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+
     implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.ui.graphics)
+    ksp(libs.androidx.room.compiler)
 
     implementation(libs.vico.core)
     implementation(libs.vico.compose)

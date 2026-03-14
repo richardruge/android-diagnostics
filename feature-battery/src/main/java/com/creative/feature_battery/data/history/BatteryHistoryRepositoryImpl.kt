@@ -3,6 +3,7 @@ package com.creative.feature_battery.data.history
 import com.creative.feature_battery.domain.model.BatteryInfo
 import com.creative.feature_battery.domain.model.BatteryHealthUi
 import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class BatteryHistoryRepositoryImpl(
@@ -15,7 +16,7 @@ class BatteryHistoryRepositoryImpl(
         dao.trimToSize(maxSize)
     }
 
-    override fun observeHistory() =
+    override fun observeHistory(): Flow<List<BatteryInfo>> =
         dao.observeHistory().map { list -> list.map { it.toDomain() } }
 }
 
@@ -37,7 +38,11 @@ fun BatteryHistoryEntity.toDomain() = BatteryInfo(
     temperatureC = temperatureC,
     isCharging = isCharging,
     chargeRateMah = chargeRateMah,
-    health = BatteryHealthUi.valueOf(health),
+    health = try {
+        BatteryHealthUi.valueOf(health)
+    } catch (e: Exception) {
+        BatteryHealthUi.UNSPECIFIED
+    },
     capacityMah = capacityMah,
     voltageMv = voltageMv,
     technology = technology,

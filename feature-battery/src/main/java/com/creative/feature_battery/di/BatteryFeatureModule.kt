@@ -4,12 +4,13 @@ import androidx.room.Room
 import com.creative.feature_battery.data.BatteryRepositoryImpl
 import com.creative.feature_battery.data.history.BatteryHistoryDatabase
 import com.creative.feature_battery.data.history.BatteryHistoryRepositoryImpl
+import com.creative.feature_battery.domain.BatterySeverityEvaluator
 import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
 import com.creative.feature_battery.domain.repository.BatteryRepository
 import com.creative.feature_battery.presentation.BatteryViewModel
+import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
-import kotlin.jvm.java
 
 val batteryFeatureModule = module {
 
@@ -34,8 +35,17 @@ val batteryFeatureModule = module {
     }
 
     // Main battery repository
-    single<BatteryRepository> { BatteryRepositoryImpl(get()) }
+    single<BatteryRepository> { 
+        BatteryRepositoryImpl(
+            provider = get(),
+            historyRepository = get()
+        ) 
+    }
 
-    // ViewModel
+    // Evaluator
+    single { BatterySeverityEvaluator() }
+
+    // ViewModels
     viewModel { BatteryViewModel(get(), get()) }
+    viewModel { BatteryChartViewModel(get(), get()) }
 }

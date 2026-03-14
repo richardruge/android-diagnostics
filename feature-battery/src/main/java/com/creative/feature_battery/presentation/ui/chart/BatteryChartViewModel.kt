@@ -2,13 +2,17 @@ package com.creative.feature_battery.presentation.ui.chart
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.creative.core_data.thermal.ThermalRepository
 import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class BatteryChartViewModel(
-    historyRepository: BatteryHistoryRepository
+    historyRepository: BatteryHistoryRepository,
+    private val thermalRepository: ThermalRepository
 ) : ViewModel() {
 
     val chartData = historyRepository.observeHistory()
@@ -21,4 +25,15 @@ class BatteryChartViewModel(
             SharingStarted.WhileSubscribed(5000),
             emptyList()
         )
+
+    val thermalStatus = flow {
+        while (true) {
+            emit(thermalRepository.getThermalStatus())
+            delay(5000)
+        }
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        null
+    )
 }
