@@ -1,15 +1,3 @@
-configurations.all {
-    resolutionStrategy {
-        force("androidx.navigationevent:navigationevent-android:1.0.0-alpha01")
-        force("androidx.navigationevent:navigationevent-compose-android:1.0.0-alpha01")
-        force("androidx.activity:activity:1.10.0")
-        force("androidx.activity:activity-ktx:1.10.0")
-        force("androidx.activity:activity-compose:1.10.0")
-        force("androidx.core:core-ktx:1.15.0")
-    }
-    exclude(group = "com.intellij", module = "annotations")
-}
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -19,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.creative.diagnostics"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.creative.diagnostics"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 

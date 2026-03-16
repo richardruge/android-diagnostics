@@ -1,6 +1,5 @@
 package com.creative.core_data.thermal
 
-import android.util.Log
 import com.creative.core_model.ThermalSeverity
 import com.creative.core_model.ThermalStatus
 import com.creative.core_system.battery.BatteryInfoProvider
@@ -21,8 +20,6 @@ class ThermalRepositoryImpl(
             temp > 35f -> ThermalSeverity.WARM
             else -> ThermalSeverity.NORMAL
         }
-
-        Log.d("ThermalRepo", "Current battery temp: $temp, Severity: $severity")
 
         return ThermalStatus(
             status = "Success",
