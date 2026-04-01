@@ -3,9 +3,11 @@ package com.creative.feature_battery.presentation.ui.chart
 import androidx.compose.animation.core.snap
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
@@ -18,6 +20,8 @@ import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
+import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
+import com.patrykandpatrick.vico.core.common.Fill
 import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.math.roundToLong
@@ -41,13 +45,22 @@ fun TemperatureChart(
     }
     
     val startAxisValueFormatter = CartesianValueFormatter { _, y, _ ->
-        "%.1f°C".format(Locale.US, y)
+        "%.1f°".format(Locale.US, y)
     }
 
     val scrollState = rememberVicoScrollState(scrollEnabled = false)
+    
+    val lineColor = MaterialTheme.colorScheme.primary
 
     val chart = rememberCartesianChart(
         rememberLineCartesianLayer(
+            lineProvider = LineCartesianLayer.LineProvider.series(
+                LineCartesianLayer.Line(
+                    fill = LineCartesianLayer.LineFill.single(Fill(lineColor.toArgb())),
+                    areaFill = LineCartesianLayer.AreaFill.single(Fill(lineColor.copy(alpha = 0.2f).toArgb())),
+                    pointConnector = LineCartesianLayer.PointConnector.cubic()
+                )
+            ),
             rangeProvider = remember(minX, maxX, minY, maxY) {
                 CartesianLayerRangeProvider.fixed(
                     minX = minX,
@@ -59,12 +72,14 @@ fun TemperatureChart(
         ),
         startAxis = VerticalAxis.rememberStart(
             valueFormatter = startAxisValueFormatter,
-            title = "Temp"
+            label = null,
+            guideline = null,
+            tick = null
         ),
         bottomAxis = HorizontalAxis.rememberBottom(
             valueFormatter = bottomAxisValueFormatter,
-            title = "Time",
-            labelRotationDegrees = 45f
+            labelRotationDegrees = 45f,
+            guideline = null
         )
     )
 
@@ -74,7 +89,7 @@ fun TemperatureChart(
         scrollState = scrollState,
         modifier = modifier
             .fillMaxWidth()
-            .height(250.dp),
+            .height(280.dp),
         animationSpec = if (runAnimations) null else snap()
     )
 }
