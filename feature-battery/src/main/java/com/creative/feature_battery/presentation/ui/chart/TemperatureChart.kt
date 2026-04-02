@@ -44,32 +44,52 @@ fun TemperatureChart(
         }
     }
     
-    val startAxisValueFormatter = CartesianValueFormatter { _, y, _ ->
-        "%.1f°".format(Locale.US, y)
+    val startAxisValueFormatter = remember {
+        CartesianValueFormatter { _, y, _ ->
+            "%.1f°".format(Locale.US, y)
+        }
     }
 
     val scrollState = rememberVicoScrollState(scrollEnabled = false)
     
     val lineColor = MaterialTheme.colorScheme.primary
 
-    val chart = rememberCartesianChart(
-        rememberLineCartesianLayer(
-            lineProvider = LineCartesianLayer.LineProvider.series(
+    // Use a stable range provider to avoid re-creating it every second
+    val rangeProvider = remember {
+        object : CartesianLayerRangeProvider {
+            var minX: Double? = null
+            var maxX: Double? = null
+            var minY: Double? = null
+            var maxY: Double? = null
+
+            override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.minX ?: minX
+            override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.maxX ?: maxX
+            override fun getMinY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.minY ?: minY
+            override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.maxY ?: maxY
+        }
+    }
+
+    // Update the range provider's values without triggering a recomposition of the whole chart layer
+    rangeProvider.minX = minX
+    rangeProvider.maxX = maxX
+    rangeProvider.minY = minY
+    rangeProvider.maxY = maxY
+
+    val lineLayer = rememberLineCartesianLayer(
+        lineProvider = remember(lineColor) {
+            LineCartesianLayer.LineProvider.series(
                 LineCartesianLayer.Line(
                     fill = LineCartesianLayer.LineFill.single(Fill(lineColor.toArgb())),
                     areaFill = LineCartesianLayer.AreaFill.single(Fill(lineColor.copy(alpha = 0.2f).toArgb())),
                     pointConnector = LineCartesianLayer.PointConnector.cubic()
                 )
-            ),
-            rangeProvider = remember(minX, maxX, minY, maxY) {
-                CartesianLayerRangeProvider.fixed(
-                    minX = minX,
-                    maxX = maxX,
-                    minY = minY,
-                    maxY = maxY
-                )
-            }
-        ),
+            )
+        },
+        rangeProvider = rangeProvider
+    )
+
+    val chart = rememberCartesianChart(
+        lineLayer,
         startAxis = VerticalAxis.rememberStart(
             valueFormatter = startAxisValueFormatter,
             label = null,
