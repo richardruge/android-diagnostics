@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Thermostat
@@ -64,8 +66,13 @@ fun BatteryChartScreen(viewModel: BatteryChartViewModel) {
     val thermalStatus by viewModel.thermalStatus.collectAsState()
     val selectedWindow by viewModel.selectedWindow.collectAsState()
     val alerts by viewModel.alerts.collectAsState()
+    val scrollState = rememberScrollState()
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .verticalScroll(scrollState)
+    ) {
         thermalStatus?.let { status ->
             ThermalStatusHeader(status)
             Spacer(modifier = Modifier.height(16.dp))
@@ -77,6 +84,13 @@ fun BatteryChartScreen(viewModel: BatteryChartViewModel) {
         }
 
         Spacer(modifier = Modifier.height(8.dp))
+
+        TimeWindowSelector(
+            selectedWindow = selectedWindow,
+            onWindowSelected = { viewModel.setWindow(it) }
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -90,13 +104,6 @@ fun BatteryChartScreen(viewModel: BatteryChartViewModel) {
             LiveIndicator()
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TimeWindowSelector(
-            selectedWindow = selectedWindow,
-            onWindowSelected = { viewModel.setWindow(it) }
-        )
-
         Spacer(modifier = Modifier.height(16.dp))
 
         BatteryChartContent(
@@ -105,9 +112,25 @@ fun BatteryChartScreen(viewModel: BatteryChartViewModel) {
             windowMinutes = selectedWindow.minutes
         )
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "Battery Level History",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        BatteryLevelChartContent(
+            data = data,
+            windowMinutes = selectedWindow.minutes
+        )
+
         Spacer(modifier = Modifier.height(8.dp))
         
         LastUpdatedTimestamp(thermalStatus?.timestamp)
+        
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -375,6 +398,80 @@ fun BatteryChartContent(
             minX = minX.toDouble(),
             maxX = maxX.toDouble(),
             minY = minY,
+            runAnimations = false
+        )
+    }
+}
+
+@Composable
+fun BatteryLevelChartContent(
+    data: List<BatteryInfo>,
+    windowMinutes: Long = 5
+) {
+    val modelProducer = remember { CartesianChartModelProducer() }
+    val windowSizeSec = windowMinutes * 60L
+    var currentTimeSec by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentTimeSec = System.currentTimeMillis() / 1000
+            delay(1000)
+        }
+    }
+
+    val maxX = currentTimeSec
+    val minX = maxX - windowSizeSec
+
+    val chartPoints = remember(data, minX) {
+        data.filter { it.timestamp >= (minX * 1000) }
+            .map { (it.timestamp / 1000) to (it.level.toDouble()) }
+            .distinctBy { it.first }
+            .sortedBy { it.first }
+    }
+
+    val minY = remember(chartPoints) {
+        if (chartPoints.isNotEmpty()) {
+            val min = chartPoints.minOf { it.second }
+            maxOf(0.0, min - 2.0)
+        } else 0.0
+    }
+
+    val maxY = remember(chartPoints) {
+        if (chartPoints.isNotEmpty()) {
+            val max = chartPoints.maxOf { it.second }
+            minOf(100.0, max + 2.0)
+        } else 100.0
+    }
+
+    LaunchedEffect(chartPoints, minX) {
+        if (chartPoints.isNotEmpty()) {
+            modelProducer.runTransaction {
+                lineSeries {
+                    series(
+                        x = chartPoints.map { it.first },
+                        y = chartPoints.map { it.second }
+                    )
+                }
+            }
+        }
+    }
+
+    if (chartPoints.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "No level data available", style = MaterialTheme.typography.bodyMedium)
+        }
+    } else {
+        BatteryLevelChart(
+            modelProducer = modelProducer,
+            minX = minX.toDouble(),
+            maxX = maxX.toDouble(),
+            minY = minY,
+            maxY = maxY,
             runAnimations = false
         )
     }
