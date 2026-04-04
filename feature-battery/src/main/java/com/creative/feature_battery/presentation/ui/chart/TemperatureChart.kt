@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
@@ -53,6 +54,7 @@ fun TemperatureChart(
     val scrollState = rememberVicoScrollState(scrollEnabled = false)
     
     val lineColor = MaterialTheme.colorScheme.primary
+    val labelColor = MaterialTheme.colorScheme.onSurface
 
     // Use a stable range provider to avoid re-creating it every second
     val rangeProvider = remember {
@@ -91,12 +93,13 @@ fun TemperatureChart(
     val chart = rememberCartesianChart(
         lineLayer,
         startAxis = VerticalAxis.rememberStart(
+            label = rememberAxisLabelComponent(color = labelColor),
             valueFormatter = startAxisValueFormatter,
-            label = null,
             guideline = null,
             tick = null
         ),
         bottomAxis = HorizontalAxis.rememberBottom(
+            label = rememberAxisLabelComponent(color = labelColor),
             valueFormatter = bottomAxisValueFormatter,
             labelRotationDegrees = 45f,
             guideline = null
