@@ -1,11 +1,11 @@
 package com.creative.feature_network.presentation.ui
 
-import com.creative.core_model.NetworkHealth
+import com.creative.core_model.NetworkState
 
 data class NetworkUiState(
-    val levelPercent: Int? = null,
-    val health: NetworkHealth? = null,
-    val isCharging: Boolean? = null,
+    val networkState: NetworkState? = null,
     val isLoading: Boolean = true,
+    val isPingTesting: Boolean = false,
+    val lastPingMs: Long? = null,
     val errorMessage: String? = null
 )

@@ -100,8 +100,8 @@ private fun BatteryContent(state: BatteryUiState.Ready) {
             text = "System Severity: ${state.severity}",
             style = MaterialTheme.typography.bodyLarge,
             color = when (state.severity.name) {
-                "CRITICAL" -> MaterialTheme.colorScheme.error
-                "WARNING" -> MaterialTheme.colorScheme.tertiary
+                "CRITICAL", "HIGH" -> MaterialTheme.colorScheme.error
+                "MEDIUM", "LOW" -> MaterialTheme.colorScheme.tertiary
                 else -> MaterialTheme.colorScheme.primary
             }
         )

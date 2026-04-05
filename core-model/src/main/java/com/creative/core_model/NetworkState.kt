@@ -1,11 +1,20 @@
 package com.creative.core_model
 
 data class NetworkState(
-    val levelPercent: Int,
-    val health: NetworkHealth,
-    val isCharging: Boolean
+    val isConnected: Boolean,
+    val type: NetworkType,
+    val signalStrengthDbm: Int?,
+    val signalLevel: Int, // 0 to 4
+    val ssid: String? = null,
+    val frequencyMhz: Int? = null,
+    val linkSpeedMbps: Int? = null,
+    val ipAddress: String? = null
 )
 
+enum class NetworkType {
+    WIFI, CELLULAR, ETHERNET, NONE, UNKNOWN
+}
+
 enum class NetworkHealth {
-    GOOD, FAIR, POOR, UNKNOWN
+    EXCELLENT, GOOD, FAIR, POOR, NONE
 }
