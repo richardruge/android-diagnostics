@@ -54,6 +54,10 @@ fun BatteryChartScreen(viewModel: BatteryChartViewModel) {
             .padding(16.dp)
             .verticalScroll(scrollState)
     ) {
+        PowerAndHealthQuickView(batteryStatus, healthSeverity)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         thermalStatus?.let { status ->
             ThermalStatusHeader(status)
             Spacer(modifier = Modifier.height(16.dp))
@@ -65,10 +69,6 @@ fun BatteryChartScreen(viewModel: BatteryChartViewModel) {
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-
-        PowerAndHealthQuickView(batteryStatus, healthSeverity)
-        
-        Spacer(modifier = Modifier.height(24.dp))
 
         TimeWindowSelector(
             selectedWindow = selectedWindow,
