@@ -12,9 +12,11 @@ class BatterySeverityEvaluator(
             val value = when (rule.metric) {
                 BatteryMetric.TEMPERATURE -> info.temperatureC
                 BatteryMetric.LEVEL -> info.level.toFloat()
+                BatteryMetric.CYCLE_COUNT -> info.cycleCount?.toFloat() ?: -1f
+                BatteryMetric.STATE_OF_HEALTH -> info.stateOfHealth?.toFloat() ?: -1f
             }
 
-            if (value in rule.range) rule.severity else null
+            if (value != -1f && value in rule.range) rule.severity else null
         }
 
         return matched.maxByOrNull { it.ordinal } ?: Severity.NORMAL

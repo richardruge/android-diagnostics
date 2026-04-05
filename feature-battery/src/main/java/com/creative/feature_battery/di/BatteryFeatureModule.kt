@@ -20,7 +20,9 @@ val batteryFeatureModule = module {
             get(),
             BatteryHistoryDatabase::class.java,
             "battery_history.db"
-        ).build()
+        )
+            .fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
     }
 
     // DAO
@@ -47,5 +49,5 @@ val batteryFeatureModule = module {
 
     // ViewModels
     viewModel { BatteryViewModel(get(), get()) }
-    viewModel { BatteryChartViewModel(get(), get()) }
+    viewModel { BatteryChartViewModel(get(), get(), get(), get()) }
 }

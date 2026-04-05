@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
+import android.os.Build
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -12,6 +13,8 @@ import kotlinx.coroutines.flow.callbackFlow
 class BatteryInfoProviderImpl(
     private val context: Context
 ) : BatteryInfoProvider {
+
+    private val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
 
     override fun observe(): Flow<RawBatteryInfo> = callbackFlow {
         val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
@@ -56,15 +59,38 @@ class BatteryInfoProviderImpl(
             else -> BatteryHealth.UNSPECIFIED
         }
 
+        val cycleCount = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            getIntExtra(BatteryManager.EXTRA_CYCLE_COUNT, -1).takeIf { it != -1 }
+        } else {
+            null
+        }
+
+        val stateOfHealth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            null 
+        } else {
+            null
+        }
+
+        val currentNow = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+        val currentAverage = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE)
+
+        // Microamperes to Milliamperes
+        val currentNowMa = if (currentNow != Int.MIN_VALUE) currentNow / 1000 else null
+        val currentAverageMa = if (currentAverage != Int.MIN_VALUE) currentAverage / 1000 else null
+
         return RawBatteryInfo(
             level = pct,
             temperatureC = temperatureC,
             isCharging = isCharging,
-            chargeRateMah = null, // Android doesn't expose this directly
+            chargeRateMah = null, 
             health = health,
-            capacityMah = null,   // optional: can be read from system files
+            capacityMah = null,   
             voltageMv = getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1),
-            technology = getStringExtra(BatteryManager.EXTRA_TECHNOLOGY)
+            technology = getStringExtra(BatteryManager.EXTRA_TECHNOLOGY),
+            cycleCount = cycleCount,
+            stateOfHealth = stateOfHealth,
+            currentNowMa = currentNowMa,
+            currentAverageMa = currentAverageMa
         )
     }
 }

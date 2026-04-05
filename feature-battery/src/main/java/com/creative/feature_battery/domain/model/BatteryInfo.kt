@@ -9,5 +9,9 @@ data class BatteryInfo(
     val capacityMah: Int?,
     val voltageMv: Int?,
     val technology: String?,
+    val cycleCount: Int?,
+    val stateOfHealth: Int?,
+    val currentNowMa: Int?,
+    val currentAverageMa: Int?,
     val timestamp: Long
 )

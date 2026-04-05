@@ -4,7 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creative.core_data.thermal.ThermalRepository
 import com.creative.core_model.ThermalSeverity
+import com.creative.feature_battery.domain.BatterySeverityEvaluator
+import com.creative.feature_battery.domain.model.BatteryInfo
+import com.creative.feature_battery.domain.model.Severity
 import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
+import com.creative.feature_battery.domain.repository.BatteryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +38,9 @@ enum class AlertSeverity {
 
 class BatteryChartViewModel(
     historyRepository: BatteryHistoryRepository,
-    private val thermalRepository: ThermalRepository
+    private val batteryRepository: BatteryRepository,
+    private val thermalRepository: ThermalRepository,
+    private val evaluator: BatterySeverityEvaluator
 ) : ViewModel() {
 
     private val _selectedWindow = MutableStateFlow(TimeWindow.HOUR_1)
@@ -52,6 +58,21 @@ class BatteryChartViewModel(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
         emptyList()
+    )
+
+    val batteryStatus: StateFlow<BatteryInfo?> = batteryRepository.observeBatteryInfo()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            null
+        )
+        
+    val batteryHealthSeverity: StateFlow<Severity> = batteryStatus.map { info ->
+        info?.let { evaluator.evaluate(it) } ?: Severity.NORMAL
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        Severity.NORMAL
     )
 
     val thermalStatus = flow {

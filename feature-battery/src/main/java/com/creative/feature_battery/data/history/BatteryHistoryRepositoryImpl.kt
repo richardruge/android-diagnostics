@@ -30,6 +30,10 @@ fun BatteryInfo.toEntity() = BatteryHistoryEntity(
     capacityMah = capacityMah,
     voltageMv = voltageMv,
     technology = technology,
+    cycleCount = cycleCount,
+    stateOfHealth = stateOfHealth,
+    currentNowMa = currentNowMa,
+    currentAverageMa = currentAverageMa,
     timestamp = timestamp
 )
 
@@ -46,5 +50,9 @@ fun BatteryHistoryEntity.toDomain() = BatteryInfo(
     capacityMah = capacityMah,
     voltageMv = voltageMv,
     technology = technology,
+    cycleCount = cycleCount,
+    stateOfHealth = stateOfHealth,
+    currentNowMa = currentNowMa,
+    currentAverageMa = currentAverageMa,
     timestamp = timestamp
 )

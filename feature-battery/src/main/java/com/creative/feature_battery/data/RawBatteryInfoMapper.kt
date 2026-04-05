@@ -9,10 +9,13 @@ fun RawBatteryInfo.toBatteryInfo(): BatteryInfo =
         temperatureC = temperatureC,
         isCharging = isCharging,
         chargeRateMah = chargeRateMah,
-        health = health.toUi(),   // if you already have a UI enum mapper
+        health = health.toUi(),
         capacityMah = capacityMah,
         voltageMv = voltageMv,
         technology = technology,
+        cycleCount = cycleCount,
+        stateOfHealth = stateOfHealth,
+        currentNowMa = currentNowMa,
+        currentAverageMa = currentAverageMa,
         timestamp = System.currentTimeMillis()
     )
-

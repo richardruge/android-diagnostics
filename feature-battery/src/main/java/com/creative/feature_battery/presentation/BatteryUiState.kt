@@ -14,7 +14,11 @@ sealed interface BatteryUiState {
         val severity: Severity,
         val capacityMah: Int?,
         val voltageMv: Int?,
-        val technology: String?
+        val technology: String?,
+        val cycleCount: Int?,
+        val stateOfHealth: Int?,
+        val currentNowMa: Int?,
+        val currentAverageMa: Int?
     ) : BatteryUiState
 
     companion object {
@@ -27,7 +31,11 @@ sealed interface BatteryUiState {
                 severity = severity,
                 capacityMah = info.capacityMah,
                 voltageMv = info.voltageMv,
-                technology = info.technology
+                technology = info.technology,
+                cycleCount = info.cycleCount,
+                stateOfHealth = info.stateOfHealth,
+                currentNowMa = info.currentNowMa,
+                currentAverageMa = info.currentAverageMa
             )
         }
     }

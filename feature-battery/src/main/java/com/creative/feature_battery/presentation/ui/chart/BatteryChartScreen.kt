@@ -9,61 +9,42 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Thermostat
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.creative.core_model.ThermalSeverity
 import com.creative.core_model.ThermalStatus
 import com.creative.feature_battery.domain.model.BatteryInfo
+import com.creative.feature_battery.domain.model.Severity
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun BatteryChartScreen(viewModel: BatteryChartViewModel) {
     val data by viewModel.chartData.collectAsState()
     val thermalStatus by viewModel.thermalStatus.collectAsState()
+    val batteryStatus by viewModel.batteryStatus.collectAsState()
+    val healthSeverity by viewModel.batteryHealthSeverity.collectAsState()
     val selectedWindow by viewModel.selectedWindow.collectAsState()
     val alerts by viewModel.alerts.collectAsState()
     val scrollState = rememberScrollState()
@@ -84,6 +65,10 @@ fun BatteryChartScreen(viewModel: BatteryChartViewModel) {
         }
 
         Spacer(modifier = Modifier.height(8.dp))
+
+        PowerAndHealthQuickView(batteryStatus, healthSeverity)
+        
+        Spacer(modifier = Modifier.height(24.dp))
 
         TimeWindowSelector(
             selectedWindow = selectedWindow,
@@ -131,6 +116,122 @@ fun BatteryChartScreen(viewModel: BatteryChartViewModel) {
         LastUpdatedTimestamp(thermalStatus?.timestamp)
         
         Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun PowerAndHealthQuickView(info: BatteryInfo?, healthSeverity: Severity) {
+    if (info == null) return
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = "Real-time Metrics",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Power Card
+            MetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Power Draw",
+                value = info.currentNowMa?.let { 
+                    val voltage = info.voltageMv ?: 0
+                    val watts = (voltage.toFloat() / 1000f) * (Math.abs(it).toFloat() / 1000f)
+                    "%.2f W".format(watts)
+                } ?: "N/A",
+                subValue = info.currentNowMa?.let { "${if (it > 0) "+" else ""}$it mA" } ?: "N/A",
+                icon = Icons.Default.Power,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            // Health Card - Updated to show Severity
+            MetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Battery Wear",
+                value = healthSeverity.name,
+                subValue = "Cycle: ${info.cycleCount ?: "N/A"}",
+                icon = Icons.Default.BatteryFull,
+                color = when (healthSeverity) {
+                    Severity.NORMAL -> Color(0xFF4CAF50) // Green
+                    Severity.LOW -> Color(0xFF8BC34A) // Light Green
+                    Severity.MEDIUM -> Color(0xFFFFC107) // Amber
+                    Severity.HIGH, Severity.CRITICAL -> Color(0xFFF44336) // Red
+                }
+            )
+        }
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            MetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Voltage",
+                value = info.voltageMv?.let { "$it mV" } ?: "N/A",
+                subValue = "Status: ${info.health.name}",
+                icon = Icons.Default.Settings,
+                color = MaterialTheme.colorScheme.secondary
+            )
+            
+            MetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Capacity",
+                value = info.capacityMah?.let { "$it mAh" } ?: "N/A",
+                subValue = info.technology ?: "Unknown Tech",
+                icon = Icons.Default.Info,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+    }
+}
+
+@Composable
+private fun MetricCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    value: String,
+    subValue: String,
+    icon: ImageVector,
+    color: Color
+) {
+    ElevatedCard(
+        modifier = modifier,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+            Text(
+                text = subValue,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
@@ -475,10 +576,4 @@ fun BatteryLevelChartContent(
             runAnimations = false
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun BatteryChartPreview() {
-    BatteryChartContent(data = emptyList())
 }
