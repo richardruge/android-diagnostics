@@ -18,5 +18,7 @@ data class BatteryHistoryEntity(
     val stateOfHealth: Int?,
     val currentNowMa: Int?,
     val currentAverageMa: Int?,
+    val maxChargingCurrentUa: Int?,
+    val maxChargingVoltageMv: Int?,
     val timestamp: Long
 )

@@ -9,6 +9,8 @@ import com.creative.feature_battery.domain.model.BatteryInfo
 import com.creative.feature_battery.domain.model.Severity
 import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
 import com.creative.feature_battery.domain.repository.BatteryRepository
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 
 enum class TimeWindow(val minutes: Long) {
@@ -46,12 +49,37 @@ class BatteryChartViewModel(
     private val _selectedWindow = MutableStateFlow(TimeWindow.HOUR_1)
     val selectedWindow: StateFlow<TimeWindow> = _selectedWindow
 
+    val batteryLevelModelProducer = CartesianChartModelProducer()
+    val temperatureModelProducer = CartesianChartModelProducer()
+
     val chartData = combine(
         historyRepository.observeHistory(),
         _selectedWindow
     ) { history, window ->
         val cutoff = System.currentTimeMillis() - (window.minutes * 60 * 1000)
         history.filter { it.timestamp >= cutoff }
+            .sortedBy { it.timestamp }
+            .distinctBy { it.timestamp }
+    }
+    .onEach { data ->
+        if (data.isNotEmpty()) {
+            batteryLevelModelProducer.runTransaction {
+                lineSeries {
+                    series(
+                        data.map { it.timestamp / 1000.0 },
+                        data.map { it.level.toDouble() }
+                    )
+                }
+            }
+            temperatureModelProducer.runTransaction {
+                lineSeries {
+                    series(
+                        data.map { it.timestamp / 1000.0 },
+                        data.map { it.temperatureC.toDouble() }
+                    )
+                }
+            }
+        }
     }
     .flowOn(Dispatchers.Default)
     .stateIn(

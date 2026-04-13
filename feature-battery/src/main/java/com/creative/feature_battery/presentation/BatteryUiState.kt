@@ -1,6 +1,7 @@
 package com.creative.feature_battery.presentation
 
 import com.creative.feature_battery.domain.model.BatteryInfo
+import com.creative.feature_battery.domain.model.ChargingRate
 import com.creative.feature_battery.domain.model.Severity
 
 sealed interface BatteryUiState {
@@ -18,7 +19,8 @@ sealed interface BatteryUiState {
         val cycleCount: Int?,
         val stateOfHealth: Int?,
         val currentNowMa: Int?,
-        val currentAverageMa: Int?
+        val currentAverageMa: Int?,
+        val chargingRate: ChargingRate
     ) : BatteryUiState
 
     companion object {
@@ -35,7 +37,8 @@ sealed interface BatteryUiState {
                 cycleCount = info.cycleCount,
                 stateOfHealth = info.stateOfHealth,
                 currentNowMa = info.currentNowMa,
-                currentAverageMa = info.currentAverageMa
+                currentAverageMa = info.currentAverageMa,
+                chargingRate = info.chargingRate
             )
         }
     }

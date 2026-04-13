@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.creative.feature_battery.domain.model.ChargingRate
 import com.creative.feature_battery.presentation.BatteryUiState
 import com.creative.feature_battery.presentation.BatteryViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -78,6 +79,13 @@ private fun BatteryContent(state: BatteryUiState.Ready) {
                 val powerW = (voltage.toFloat() / 1000f) * (Math.abs(current).toFloat() / 1000f)
                 InfoCard(label = "Power", value = "%.2f W".format(powerW))
             }
+        }
+
+        if (state.isCharging && state.chargingRate != ChargingRate.NONE) {
+            InfoCard(
+                label = "Charging Speed",
+                value = state.chargingRate.name.replace("_", " ")
+            )
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))

@@ -1,121 +1,196 @@
 package com.creative.feature_battery.presentation.ui.chart
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.creative.core_model.ThermalSeverity
-import com.creative.core_model.ThermalStatus
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creative.feature_battery.domain.model.BatteryInfo
+import com.creative.feature_battery.domain.model.ChargingRate
 import com.creative.feature_battery.domain.model.Severity
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
-import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun BatteryChartScreen(viewModel: BatteryChartViewModel) {
-    val data by viewModel.chartData.collectAsState()
-    val thermalStatus by viewModel.thermalStatus.collectAsState()
-    val batteryStatus by viewModel.batteryStatus.collectAsState()
-    val healthSeverity by viewModel.batteryHealthSeverity.collectAsState()
-    val selectedWindow by viewModel.selectedWindow.collectAsState()
-    val alerts by viewModel.alerts.collectAsState()
-    val scrollState = rememberScrollState()
+fun BatteryChartScreen(
+    viewModel: BatteryChartViewModel = koinViewModel()
+) {
+    val latestInfo by viewModel.batteryStatus.collectAsStateWithLifecycle()
+    val healthSeverity by viewModel.batteryHealthSeverity.collectAsStateWithLifecycle()
+    
+    // Collecting chartData is ESSENTIAL to trigger the onEach { ... } block in the ViewModel 
+    // which updates the modelProducers for the charts.
+    val chartData by viewModel.chartData.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
+            .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(scrollState)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        PowerAndHealthQuickView(batteryStatus, healthSeverity)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        thermalStatus?.let { status ->
-            ThermalStatusHeader(status)
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        alerts.forEach { alert ->
-            AlertItem(alert)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TimeWindowSelector(
-            selectedWindow = selectedWindow,
-            onWindowSelected = { viewModel.setWindow(it) }
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Temperature History",
-                style = MaterialTheme.typography.titleMedium
-            )
-            LiveIndicator()
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        BatteryChartContent(
-            data = data,
-            currentTemp = thermalStatus?.temperatureC,
-            windowMinutes = selectedWindow.minutes
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
         Text(
-            text = "Battery Level History",
-            style = MaterialTheme.typography.titleMedium
+            text = "Battery Trends",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // Real-time Power & Health Summary
+        PowerAndHealthQuickView(latestInfo, healthSeverity)
 
-        BatteryLevelChartContent(
-            data = data,
-            windowMinutes = selectedWindow.minutes
+        // Charger Rating (if charging)
+        ChargerRatingCard(latestInfo)
+
+        if (chartData.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("No data available for the selected period", style = MaterialTheme.typography.bodyMedium)
+            }
+        } else {
+            // Battery Level Chart
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Battery Level (%)", style = MaterialTheme.typography.titleSmall)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    BatteryLevelChart(
+                        modelProducer = viewModel.batteryLevelModelProducer,
+                        runAnimations = false
+                    )
+                }
+            }
+
+            // Temperature Chart
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Temperature (°C)", style = MaterialTheme.typography.titleSmall)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TemperatureChart(
+                        modelProducer = viewModel.temperatureModelProducer,
+                        runAnimations = false
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChargerRatingCard(info: BatteryInfo?) {
+    if (info == null) return
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = if (info.isCharging) 
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+            else MaterialTheme.colorScheme.surface
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        LastUpdatedTimestamp(thermalStatus?.timestamp)
-        
-        Spacer(modifier = Modifier.height(16.dp))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Charger Rating",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                if (info.isCharging) {
+                    val infiniteTransition = rememberInfiniteTransition(label = "bolt")
+                    val alpha by infiniteTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = 0.4f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(800),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "alpha"
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Bolt,
+                        contentDescription = null,
+                        tint = Color(0xFF4CAF50).copy(alpha = alpha),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            if (info.isCharging) {
+                val currentPower = info.powerW ?: 0.0
+                val maxPower = info.maxPowerW ?: 0.0
+                val progress = if (maxPower > 0) (currentPower / maxPower).toFloat().coerceIn(0f, 1f) else 0f
+                
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        .clip(RoundedCornerShape(5.dp)),
+                    color = if (progress > 0.8f) Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Current: ${"%.1f".format(currentPower)}W",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "Negotiated: ${"%.0f".format(maxPower)}W",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Efficiency", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${if(maxPower > 0) (currentPower/maxPower*100).toInt() else 0}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Limit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val vV = info.maxChargingVoltageMv?.toDouble()?.let { if (it > 100_000) it / 1_000_000.0 else it / 1_000.0 }
+                        val cA = info.maxChargingCurrentUa?.toDouble()?.let { it / 1_000_000.0 }
+                        Text("${vV?.let { "%.1fV".format(it) } ?: "N/A"} / ${cA?.let { "%.1fA".format(it) } ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            } else {
+                Text(
+                    text = "No Charger Connected",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+        }
     }
 }
 
@@ -137,53 +212,27 @@ private fun PowerAndHealthQuickView(info: BatteryInfo?, healthSeverity: Severity
             // Power Card
             MetricCard(
                 modifier = Modifier.weight(1f),
-                title = "Power Draw",
-                value = info.currentNowMa?.let { 
-                    val voltage = info.voltageMv ?: 0
-                    val watts = (voltage.toFloat() / 1000f) * (Math.abs(it).toFloat() / 1000f)
-                    "%.2f W".format(watts)
-                } ?: "N/A",
-                subValue = info.currentNowMa?.let { "${if (it > 0) "+" else ""}$it mA" } ?: "N/A",
-                icon = Icons.Default.Power,
-                color = MaterialTheme.colorScheme.primary
+                title = if (info.isCharging) "Charging Speed" else "Power Draw",
+                value = if (info.isCharging && info.chargingRate != ChargingRate.NONE) {
+                    info.chargingRate.name.replace("_", " ")
+                } else {
+                    info.powerW?.let { "%.2f W".format(it) } ?: "N/A"
+                },
+                subtitle = if (info.isCharging) "Charging" else "On Battery",
+                color = if (info.isCharging) Color(0xFF4CAF50) else MaterialTheme.colorScheme.secondary
             )
 
-            // Health Card - Updated to show Severity
+            // Health Card
             MetricCard(
                 modifier = Modifier.weight(1f),
-                title = "Battery Wear",
-                value = healthSeverity.name,
-                subValue = "Cycle: ${info.cycleCount ?: "N/A"}",
-                icon = Icons.Default.BatteryFull,
+                title = "Battery Health",
+                value = info.health.name,
+                subtitle = "Severity: ${healthSeverity.name}",
                 color = when (healthSeverity) {
-                    Severity.NORMAL -> Color(0xFF4CAF50) // Green
-                    Severity.LOW -> Color(0xFF8BC34A) // Light Green
-                    Severity.MEDIUM -> Color(0xFFFFC107) // Amber
-                    Severity.HIGH, Severity.CRITICAL -> Color(0xFFF44336) // Red
+                    Severity.CRITICAL, Severity.HIGH -> MaterialTheme.colorScheme.error
+                    Severity.MEDIUM -> Color(0xFFFFA000)
+                    else -> Color(0xFF4CAF50)
                 }
-            )
-        }
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            MetricCard(
-                modifier = Modifier.weight(1f),
-                title = "Voltage",
-                value = info.voltageMv?.let { "$it mV" } ?: "N/A",
-                subValue = "Status: ${info.health.name}",
-                icon = Icons.Default.Settings,
-                color = MaterialTheme.colorScheme.secondary
-            )
-            
-            MetricCard(
-                modifier = Modifier.weight(1f),
-                title = "Capacity",
-                value = info.capacityMah?.let { "$it mAh" } ?: "N/A",
-                subValue = info.technology ?: "Unknown Tech",
-                icon = Icons.Default.Info,
-                color = MaterialTheme.colorScheme.outline
             )
         }
     }
@@ -194,386 +243,25 @@ private fun MetricCard(
     modifier: Modifier = Modifier,
     title: String,
     value: String,
-    subValue: String,
-    icon: ImageVector,
+    subtitle: String,
     color: Color
 ) {
-    ElevatedCard(
+    Card(
         modifier = modifier,
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
-            Text(
-                text = subValue,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun AlertItem(alert: DiagnosticAlert) {
-    val containerColor = when (alert.severity) {
-        AlertSeverity.CRITICAL -> MaterialTheme.colorScheme.errorContainer
-        AlertSeverity.WARNING -> Color(0xFFFFECB3) // Amber/Yellow
-        AlertSeverity.INFO -> MaterialTheme.colorScheme.primaryContainer
-    }
-    
-    val contentColor = when (alert.severity) {
-        AlertSeverity.CRITICAL -> MaterialTheme.colorScheme.onErrorContainer
-        AlertSeverity.WARNING -> Color(0xFF5D4037) // Dark Brown
-        AlertSeverity.INFO -> MaterialTheme.colorScheme.onPrimaryContainer
-    }
-
-    val icon = when (alert.severity) {
-        AlertSeverity.CRITICAL -> Icons.Default.Warning
-        AlertSeverity.WARNING -> Icons.Default.Warning
-        AlertSeverity.INFO -> Icons.Default.Info
-    }
-
-    AnimatedVisibility(
-        visible = true,
-        enter = expandVertically(),
-        exit = shrinkVertically()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(containerColor)
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = contentColor,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = alert.title,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = contentColor,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = alert.message,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = contentColor
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun LiveIndicator() {
-    val infiniteTransition = rememberInfiniteTransition(label = "live_indicator")
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0.3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000),
-            repeatMode = RepeatMode.Reverse
+        colors = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.1f)
         ),
-        label = "alpha"
-    )
-
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .alpha(alpha)
-                .clip(CircleShape)
-                .background(Color.Red)
+        border = CardDefaults.outlinedCardBorder().copy(
+            brush = SolidColor(color.copy(alpha = 0.3f))
         )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = "LIVE",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = Color.Red
-        )
-    }
-}
-
-@Composable
-private fun TimeWindowSelector(
-    selectedWindow: TimeWindow,
-    onWindowSelected: (TimeWindow) -> Unit
-) {
-    val options = TimeWindow.entries
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        options.forEachIndexed { index, window ->
-            SegmentedButton(
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                onClick = { onWindowSelected(window) },
-                selected = window == selectedWindow
-            ) {
-                Text(
-                    when (window) {
-                        TimeWindow.MIN_15 -> "15m"
-                        TimeWindow.HOUR_1 -> "1h"
-                        TimeWindow.HOUR_24 -> "24h"
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun LastUpdatedTimestamp(timestamp: Long?) {
-    val formatter = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
-    val timeString = timestamp?.let { formatter.format(Date(it)) } ?: "--:--:--"
-    
-    Text(
-        text = "Last updated: $timeString",
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.fillMaxWidth(),
-        textAlign = androidx.compose.ui.text.style.TextAlign.End
-    )
-}
-
-@Composable
-private fun ThermalStatusHeader(status: ThermalStatus) {
-    val statusColor = when (status.severity) {
-        ThermalSeverity.NORMAL -> MaterialTheme.colorScheme.primary
-        ThermalSeverity.WARM -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.error
-    }
-
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.Start
         ) {
-            Icon(
-                imageVector = if (status.severity == ThermalSeverity.NORMAL)
-                    Icons.Default.Thermostat else Icons.Default.Warning,
-                contentDescription = null,
-                tint = statusColor,
-                modifier = Modifier.size(48.dp)
-            )
-
-            Spacer(modifier = Modifier.size(16.dp))
-
-            Column {
-                Text(
-                    text = "System Thermal Status",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = status.severity.name,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = statusColor,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    text = "${status.temperatureC}°C",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)
+            Text(subtitle, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-    }
-}
-
-@Composable
-fun BatteryChartContent(
-    data: List<BatteryInfo>,
-    currentTemp: Float? = null,
-    windowMinutes: Long = 5
-) {
-    val modelProducer = remember { CartesianChartModelProducer() }
-    
-    val windowSizeSec = windowMinutes * 60L
-    
-    var currentTimeSec by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
-    
-    val livePoints = remember { mutableStateListOf<Pair<Long, Double>>() }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            currentTimeSec = System.currentTimeMillis() / 1000
-            delay(1000) 
-        }
-    }
-
-    LaunchedEffect(currentTemp, currentTimeSec) {
-        if (currentTemp != null) {
-            val lastPoint = livePoints.lastOrNull()
-            if (lastPoint == null || lastPoint.first < currentTimeSec) {
-                livePoints.add(currentTimeSec to currentTemp.toDouble())
-            } else if (lastPoint.first == currentTimeSec) {
-                livePoints[livePoints.lastIndex] = currentTimeSec to currentTemp.toDouble()
-            }
-            
-            val cutoff = currentTimeSec - windowSizeSec - 60 
-            while (livePoints.isNotEmpty() && livePoints.first().first < cutoff) {
-                livePoints.removeAt(0)
-            }
-        }
-    }
-
-    val maxX = currentTimeSec
-    val minX = maxX - windowSizeSec
-    
-    val chartPoints = remember(data, livePoints.size, minX) { 
-        val historical = data.filter { it.timestamp >= (minX * 1000) }
-            .map { (it.timestamp / 1000) to it.temperatureC.toDouble() }
-            
-        (historical + livePoints)
-            .filter { it.first >= minX }
-            .distinctBy { it.first }
-            .sortedBy { it.first }
-    }
-
-    val minY = remember(chartPoints) {
-        if (chartPoints.isNotEmpty()) {
-            val minInWindow = chartPoints.minOf { it.second }
-            val latestTemp = chartPoints.last().second
-            minOf(minInWindow, latestTemp - 10.0)
-        } else {
-            null
-        }
-    }
-    
-    LaunchedEffect(chartPoints, minX) {
-        if (chartPoints.isNotEmpty()) {
-            modelProducer.runTransaction {
-                lineSeries {
-                    series(
-                        x = chartPoints.map { it.first },
-                        y = chartPoints.map { it.second }
-                    )
-                }
-            }
-        }
-    }
-
-    if (chartPoints.isEmpty()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(250.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(text = "No data available", style = MaterialTheme.typography.bodyMedium)
-        }
-    } else {
-        TemperatureChart(
-            modelProducer = modelProducer,
-            minX = minX.toDouble(),
-            maxX = maxX.toDouble(),
-            minY = minY,
-            runAnimations = false
-        )
-    }
-}
-
-@Composable
-fun BatteryLevelChartContent(
-    data: List<BatteryInfo>,
-    windowMinutes: Long = 5
-) {
-    val modelProducer = remember { CartesianChartModelProducer() }
-    val windowSizeSec = windowMinutes * 60L
-    var currentTimeSec by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            currentTimeSec = System.currentTimeMillis() / 1000
-            delay(1000)
-        }
-    }
-
-    val maxX = currentTimeSec
-    val minX = maxX - windowSizeSec
-
-    val chartPoints = remember(data, minX) {
-        data.filter { it.timestamp >= (minX * 1000) }
-            .map { (it.timestamp / 1000) to (it.level.toDouble()) }
-            .distinctBy { it.first }
-            .sortedBy { it.first }
-    }
-
-    val minY = remember(chartPoints) {
-        if (chartPoints.isNotEmpty()) {
-            val min = chartPoints.minOf { it.second }
-            maxOf(0.0, min - 2.0)
-        } else 0.0
-    }
-
-    val maxY = remember(chartPoints) {
-        if (chartPoints.isNotEmpty()) {
-            val max = chartPoints.maxOf { it.second }
-            minOf(100.0, max + 2.0)
-        } else 100.0
-    }
-
-    LaunchedEffect(chartPoints, minX) {
-        if (chartPoints.isNotEmpty()) {
-            modelProducer.runTransaction {
-                lineSeries {
-                    series(
-                        x = chartPoints.map { it.first },
-                        y = chartPoints.map { it.second }
-                    )
-                }
-            }
-        }
-    }
-
-    if (chartPoints.isEmpty()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(250.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(text = "No level data available", style = MaterialTheme.typography.bodyMedium)
-        }
-    } else {
-        BatteryLevelChart(
-            modelProducer = modelProducer,
-            minX = minX.toDouble(),
-            maxX = maxX.toDouble(),
-            minY = minY,
-            maxY = maxY,
-            runAnimations = false
-        )
     }
 }

@@ -41,13 +41,19 @@ fun TemperatureChart(
     
     val bottomAxisValueFormatter = remember {
         CartesianValueFormatter { _, x, _ ->
-            dateTimeFormatter.format(x.roundToLong() * 1000)
+            if (x.isNaN()) "" else {
+                try {
+                    dateTimeFormatter.format(x.roundToLong() * 1000)
+                } catch (e: Exception) {
+                    ""
+                }
+            }
         }
     }
     
     val startAxisValueFormatter = remember {
         CartesianValueFormatter { _, y, _ ->
-            "%.1f°".format(Locale.US, y)
+            if (y.isNaN()) "" else "%.1f°".format(Locale.US, y)
         }
     }
 
@@ -64,10 +70,29 @@ fun TemperatureChart(
             var minY: Double? = null
             var maxY: Double? = null
 
-            override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.minX ?: minX
-            override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.maxX ?: maxX
-            override fun getMinY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.minY ?: minY
-            override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.maxY ?: maxY
+            override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val start = (this.minX ?: minX).takeUnless { it.isNaN() } ?: 0.0
+                val end = (this.maxX ?: maxX).takeUnless { it.isNaN() } ?: (start + 1.0)
+                return if (start == end) start - 1.0 else start
+            }
+
+            override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val start = (this.minX ?: minX).takeUnless { it.isNaN() } ?: 0.0
+                val end = (this.maxX ?: maxX).takeUnless { it.isNaN() } ?: (start + 1.0)
+                return if (start == end) end + 1.0 else end
+            }
+
+            override fun getMinY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val start = (this.minY ?: minY).takeUnless { it.isNaN() } ?: 0.0
+                val end = (this.maxY ?: maxY).takeUnless { it.isNaN() } ?: (start + 1.0)
+                return if (start == end) start - 1.0 else start
+            }
+
+            override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val start = (this.minY ?: minY).takeUnless { it.isNaN() } ?: 0.0
+                val end = (this.maxY ?: maxY).takeUnless { it.isNaN() } ?: (start + 1.0)
+                return if (start == end) end + 1.0 else end
+            }
         }
     }
 

@@ -12,5 +12,7 @@ data class RawBatteryInfo(
     val cycleCount: Int?,
     val stateOfHealth: Int?,
     val currentNowMa: Int?,
-    val currentAverageMa: Int?
+    val currentAverageMa: Int?,
+    val maxChargingCurrentUa: Int?,
+    val maxChargingVoltageMv: Int?
 )

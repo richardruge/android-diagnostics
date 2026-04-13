@@ -78,6 +78,10 @@ class BatteryInfoProviderImpl(
         val currentNowMa = if (currentNow != Int.MIN_VALUE) currentNow / 1000 else null
         val currentAverageMa = if (currentAverage != Int.MIN_VALUE) currentAverage / 1000 else null
 
+        // Extraction of Max Charging Rate (API 23+)
+        val maxChargingCurrent = getIntExtra("max_charging_current", -1)
+        val maxChargingVoltage = getIntExtra("max_charging_voltage", -1)
+
         return RawBatteryInfo(
             level = pct,
             temperatureC = temperatureC,
@@ -90,7 +94,9 @@ class BatteryInfoProviderImpl(
             cycleCount = cycleCount,
             stateOfHealth = stateOfHealth,
             currentNowMa = currentNowMa,
-            currentAverageMa = currentAverageMa
+            currentAverageMa = currentAverageMa,
+            maxChargingCurrentUa = if (maxChargingCurrent != -1) maxChargingCurrent else null,
+            maxChargingVoltageMv = if (maxChargingVoltage != -1) maxChargingVoltage else null
         )
     }
 }

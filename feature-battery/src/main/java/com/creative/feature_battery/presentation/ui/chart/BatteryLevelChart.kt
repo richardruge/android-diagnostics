@@ -17,6 +17,7 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
+import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
@@ -42,13 +43,19 @@ fun BatteryLevelChart(
     
     val bottomAxisValueFormatter = remember {
         CartesianValueFormatter { _, x, _ ->
-            dateTimeFormatter.format(x.roundToLong() * 1000)
+            if (x.isNaN()) "" else {
+                try {
+                    dateTimeFormatter.format(x.roundToLong() * 1000)
+                } catch (e: Exception) {
+                    ""
+                }
+            }
         }
     }
     
     val startAxisValueFormatter = remember {
         CartesianValueFormatter { _, y, _ ->
-            "${y.toInt()}%"
+            if (y.isNaN()) "" else "${y.toInt()}%"
         }
     }
 
@@ -56,6 +63,7 @@ fun BatteryLevelChart(
     
     val lineColor = Color(0xFF4CAF50) // Green for battery level
     val labelColor = MaterialTheme.colorScheme.onSurface
+    val guidelineColor = MaterialTheme.colorScheme.outlineVariant
 
     val rangeProvider = remember {
         object : CartesianLayerRangeProvider {
@@ -64,10 +72,29 @@ fun BatteryLevelChart(
             var minY: Double? = null
             var maxY: Double? = null
 
-            override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.minX ?: minX
-            override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.maxX ?: maxX
-            override fun getMinY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.minY ?: minY
-            override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.maxY ?: maxY
+            override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val start = (this.minX ?: minX).takeUnless { it.isNaN() } ?: 0.0
+                val end = (this.maxX ?: maxX).takeUnless { it.isNaN() } ?: (start + 1.0)
+                return if (start == end) start - 1.0 else start
+            }
+
+            override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val start = (this.minX ?: minX).takeUnless { it.isNaN() } ?: 0.0
+                val end = (this.maxX ?: maxX).takeUnless { it.isNaN() } ?: (start + 1.0)
+                return if (start == end) end + 1.0 else end
+            }
+
+            override fun getMinY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val start = (this.minY ?: minY).takeUnless { it.isNaN() } ?: 0.0
+                val end = (this.maxY ?: maxY).takeUnless { it.isNaN() } ?: (start + 1.0)
+                return if (start == end) start - 1.0 else start
+            }
+
+            override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val start = (this.minY ?: minY).takeUnless { it.isNaN() } ?: 0.0
+                val end = (this.maxY ?: maxY).takeUnless { it.isNaN() } ?: (start + 1.0)
+                return if (start == end) end + 1.0 else end
+            }
         }
     }
 
@@ -94,14 +121,13 @@ fun BatteryLevelChart(
         startAxis = VerticalAxis.rememberStart(
             label = rememberAxisLabelComponent(color = labelColor),
             valueFormatter = startAxisValueFormatter,
-            guideline = null,
-            tick = null
+            guideline = rememberLineComponent(fill = Fill(guidelineColor.toArgb()), thickness = 1.dp)
         ),
         bottomAxis = HorizontalAxis.rememberBottom(
             label = rememberAxisLabelComponent(color = labelColor),
             valueFormatter = bottomAxisValueFormatter,
             labelRotationDegrees = 45f,
-            guideline = null
+            guideline = rememberLineComponent(fill = Fill(guidelineColor.toArgb()), thickness = 1.dp)
         )
     )
 

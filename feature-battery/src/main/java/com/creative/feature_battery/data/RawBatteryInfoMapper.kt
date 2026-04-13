@@ -17,5 +17,7 @@ fun RawBatteryInfo.toBatteryInfo(): BatteryInfo =
         stateOfHealth = stateOfHealth,
         currentNowMa = currentNowMa,
         currentAverageMa = currentAverageMa,
+        maxChargingCurrentUa = maxChargingCurrentUa,
+        maxChargingVoltageMv = maxChargingVoltageMv,
         timestamp = System.currentTimeMillis()
     )

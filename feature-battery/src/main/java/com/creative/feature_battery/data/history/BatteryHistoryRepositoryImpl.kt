@@ -34,6 +34,8 @@ fun BatteryInfo.toEntity() = BatteryHistoryEntity(
     stateOfHealth = stateOfHealth,
     currentNowMa = currentNowMa,
     currentAverageMa = currentAverageMa,
+    maxChargingCurrentUa = maxChargingCurrentUa,
+    maxChargingVoltageMv = maxChargingVoltageMv,
     timestamp = timestamp
 )
 
@@ -54,5 +56,7 @@ fun BatteryHistoryEntity.toDomain() = BatteryInfo(
     stateOfHealth = stateOfHealth,
     currentNowMa = currentNowMa,
     currentAverageMa = currentAverageMa,
+    maxChargingCurrentUa = maxChargingCurrentUa,
+    maxChargingVoltageMv = maxChargingVoltageMv,
     timestamp = timestamp
 )
