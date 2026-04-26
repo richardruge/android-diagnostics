@@ -60,27 +60,37 @@ class BatteryInfoProviderImpl(
         }
 
         val cycleCount = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            getIntExtra(BatteryManager.EXTRA_CYCLE_COUNT, -1).takeIf { it != -1 }
+            getIntExtra("android.os.extra.CYCLE_COUNT", -1).takeIf { it != -1 }
         } else {
             null
         }
 
         val stateOfHealth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            null 
+            getIntExtra("android.os.extra.STATE_OF_HEALTH", -1).takeIf { it != -1 }
         } else {
             null
         }
 
         val currentNow = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
         val currentAverage = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE)
+        val chargeCounter = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
+
+        // Some devices don't provide current through BatteryManager but might have it in Intent extras
+        val intentCurrentNow = getIntExtra("current_now", Int.MIN_VALUE)
+        val effectiveCurrentNow = if (currentNow != Int.MIN_VALUE) currentNow else intentCurrentNow
 
         // Microamperes to Milliamperes
-        val currentNowMa = if (currentNow != Int.MIN_VALUE) currentNow / 1000 else null
+        val currentNowMa = if (effectiveCurrentNow != Int.MIN_VALUE) effectiveCurrentNow / 1000 else null
         val currentAverageMa = if (currentAverage != Int.MIN_VALUE) currentAverage / 1000 else null
+        
+        // Microampere-hours to Milliampere-hours
+        val capacityMah = if (chargeCounter != Int.MIN_VALUE && chargeCounter > 0) chargeCounter / 1000 else null
 
         // Extraction of Max Charging Rate (API 23+)
         val maxChargingCurrent = getIntExtra("max_charging_current", -1)
         val maxChargingVoltage = getIntExtra("max_charging_voltage", -1)
+        
+        val voltageMv = getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1).takeIf { it != -1 }
 
         return RawBatteryInfo(
             level = pct,
@@ -88,8 +98,8 @@ class BatteryInfoProviderImpl(
             isCharging = isCharging,
             chargeRateMah = null, 
             health = health,
-            capacityMah = null,   
-            voltageMv = getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1),
+            capacityMah = capacityMah,   
+            voltageMv = voltageMv,
             technology = getStringExtra(BatteryManager.EXTRA_TECHNOLOGY),
             cycleCount = cycleCount,
             stateOfHealth = stateOfHealth,

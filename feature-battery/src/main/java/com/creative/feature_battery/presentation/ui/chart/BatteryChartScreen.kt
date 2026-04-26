@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.creative.core_model.ThermalStatus
 import com.creative.feature_battery.domain.model.BatteryInfo
 import com.creative.feature_battery.domain.model.ChargingRate
 import com.creative.feature_battery.domain.model.Severity
@@ -29,13 +30,13 @@ fun BatteryChartScreen(
 ) {
     val latestInfo by viewModel.batteryStatus.collectAsStateWithLifecycle()
     val healthSeverity by viewModel.batteryHealthSeverity.collectAsStateWithLifecycle()
+    val thermalStatus by viewModel.thermalStatus.collectAsStateWithLifecycle()
     val selectedWindow by viewModel.selectedWindow.collectAsStateWithLifecycle()
     
     // Use unified chartUiState to ensure data and its timeframe are always in sync
     val chartUiState by viewModel.chartUiState.collectAsStateWithLifecycle()
 
     // Calculate chart bounds based on the window actually used for filtering
-    // Use whole seconds to match the ViewModel's data mapping and avoid precision issues
     val currentTimeSeconds = remember(chartUiState.data) { System.currentTimeMillis() / 1000 }
     val maxX = currentTimeSeconds.toDouble()
     val minX = (currentTimeSeconds - (chartUiState.window.minutes * 60)).toDouble()
@@ -59,7 +60,7 @@ fun BatteryChartScreen(
         )
 
         // Real-time Power & Health Summary
-        PowerAndHealthQuickView(latestInfo, healthSeverity)
+        RealTimeMetricsSection(latestInfo, healthSeverity, thermalStatus)
 
         // Charger Rating (if charging)
         ChargerRatingCard(latestInfo)
@@ -212,21 +213,6 @@ private fun ChargerRatingCard(info: BatteryInfo?) {
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Efficiency", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${if(maxPower > 0) (currentPower/maxPower*100).toInt() else 0}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Limit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        val vV = info.maxChargingVoltageMv?.toDouble()?.let { if (it > 100_000) it / 1_000_000.0 else it / 1_000.0 }
-                        val cA = info.maxChargingCurrentUa?.toDouble()?.let { it / 1_000_000.0 }
-                        Text("${vV?.let { "%.1fV".format(it) } ?: "N/A"} / ${cA?.let { "%.1fA".format(it) } ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
             } else {
                 Text(
                     text = "No Charger Connected",
@@ -240,7 +226,11 @@ private fun ChargerRatingCard(info: BatteryInfo?) {
 }
 
 @Composable
-private fun PowerAndHealthQuickView(info: BatteryInfo?, healthSeverity: Severity) {
+private fun RealTimeMetricsSection(
+    info: BatteryInfo?, 
+    healthSeverity: Severity,
+    thermalStatus: ThermalStatus?
+) {
     if (info == null) return
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -250,11 +240,11 @@ private fun PowerAndHealthQuickView(info: BatteryInfo?, healthSeverity: Severity
             fontWeight = FontWeight.Bold
         )
         
+        // Row 1: Power & Health
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Power Card
             MetricCard(
                 modifier = Modifier.weight(1f),
                 title = if (info.isCharging) "Charging Speed" else "Power Draw",
@@ -267,7 +257,6 @@ private fun PowerAndHealthQuickView(info: BatteryInfo?, healthSeverity: Severity
                 color = if (info.isCharging) Color(0xFF4CAF50) else MaterialTheme.colorScheme.secondary
             )
 
-            // Health Card
             MetricCard(
                 modifier = Modifier.weight(1f),
                 title = "Battery Health",
@@ -276,6 +265,49 @@ private fun PowerAndHealthQuickView(info: BatteryInfo?, healthSeverity: Severity
                 color = when (healthSeverity) {
                     Severity.CRITICAL, Severity.HIGH -> MaterialTheme.colorScheme.error
                     Severity.MEDIUM -> Color(0xFFFFA000)
+                    else -> Color(0xFF4CAF50)
+                }
+            )
+        }
+
+        // Row 2: Voltage & Capacity
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            MetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Voltage",
+                value = info.voltageMv?.let { "${"%.2f".format(it / 1000f)} V" } ?: "N/A",
+                subtitle = info.technology ?: "Lithium-ion",
+                color = MaterialTheme.colorScheme.tertiary
+            )
+
+            val wearSubtitle = when {
+                info.stateOfHealth != null -> "Wear: ${100 - info.stateOfHealth}%"
+                info.cycleCount != null -> "Cycles: ${info.cycleCount}"
+                else -> info.technology ?: "Design Cap."
+            }
+
+            MetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Capacity",
+                value = info.capacityMah?.let { "$it mAh" } ?: "N/A",
+                subtitle = wearSubtitle,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        // Row 3: Thermal Status
+        thermalStatus?.let { thermal ->
+            MetricCard(
+                modifier = Modifier.fillMaxWidth(),
+                title = "System Thermal Status",
+                value = thermal.severity.name,
+                subtitle = "Source: ${thermal.status} (${"%.1f".format(thermal.temperatureC)}°C)",
+                color = when (thermal.severity.name) {
+                    "CRITICAL" -> MaterialTheme.colorScheme.error
+                    "HOT" -> Color(0xFFFFA000)
                     else -> Color(0xFF4CAF50)
                 }
             )
