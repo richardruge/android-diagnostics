@@ -22,16 +22,22 @@ import com.creative.feature_battery.domain.model.ChargingRate
 import com.creative.feature_battery.domain.model.Severity
 import org.koin.androidx.compose.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BatteryChartScreen(
     viewModel: BatteryChartViewModel = koinViewModel()
 ) {
     val latestInfo by viewModel.batteryStatus.collectAsStateWithLifecycle()
     val healthSeverity by viewModel.batteryHealthSeverity.collectAsStateWithLifecycle()
+    val selectedWindow by viewModel.selectedWindow.collectAsStateWithLifecycle()
     
-    // Collecting chartData is ESSENTIAL to trigger the onEach { ... } block in the ViewModel 
-    // which updates the modelProducers for the charts.
-    val chartData by viewModel.chartData.collectAsStateWithLifecycle()
+    // Use unified chartUiState to ensure data and its timeframe are always in sync
+    val chartUiState by viewModel.chartUiState.collectAsStateWithLifecycle()
+
+    // Calculate chart bounds based on the window actually used for filtering
+    val currentTimeMillis = remember(chartUiState.data) { System.currentTimeMillis() }
+    val maxX = currentTimeMillis / 1000.0
+    val minX = (currentTimeMillis - (chartUiState.window.minutes * 60 * 1000)) / 1000.0
 
     Column(
         modifier = Modifier
@@ -46,13 +52,18 @@ fun BatteryChartScreen(
             fontWeight = FontWeight.Bold
         )
 
+        TimeWindowSelector(
+            selectedWindow = selectedWindow,
+            onWindowSelected = viewModel::setWindow
+        )
+
         // Real-time Power & Health Summary
         PowerAndHealthQuickView(latestInfo, healthSeverity)
 
         // Charger Rating (if charging)
         ChargerRatingCard(latestInfo)
 
-        if (chartData.isEmpty()) {
+        if (chartUiState.data.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -69,7 +80,9 @@ fun BatteryChartScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     BatteryLevelChart(
                         modelProducer = viewModel.batteryLevelModelProducer,
-                        runAnimations = false
+                        runAnimations = false,
+                        minX = minX,
+                        maxX = maxX
                     )
                 }
             }
@@ -81,10 +94,41 @@ fun BatteryChartScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     TemperatureChart(
                         modelProducer = viewModel.temperatureModelProducer,
-                        runAnimations = false
+                        runAnimations = false,
+                        minX = minX,
+                        maxX = maxX
                     )
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimeWindowSelector(
+    selectedWindow: TimeWindow,
+    onWindowSelected: (TimeWindow) -> Unit
+) {
+    val options = TimeWindow.entries
+    SingleChoiceSegmentedButtonRow(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        options.forEachIndexed { index, window ->
+            SegmentedButton(
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                onClick = { onWindowSelected(window) },
+                selected = window == selectedWindow,
+                label = {
+                    Text(
+                        text = when (window) {
+                            TimeWindow.MIN_15 -> "15m"
+                            TimeWindow.HOUR_1 -> "1h"
+                            TimeWindow.HOUR_24 -> "24h"
+                        }
+                    )
+                }
+            )
         }
     }
 }

@@ -29,6 +29,11 @@ enum class TimeWindow(val minutes: Long) {
     HOUR_24(1440)
 }
 
+data class ChartUiState(
+    val data: List<BatteryInfo> = emptyList(),
+    val window: TimeWindow = TimeWindow.HOUR_1
+)
+
 data class DiagnosticAlert(
     val title: String,
     val message: String,
@@ -52,30 +57,31 @@ class BatteryChartViewModel(
     val batteryLevelModelProducer = CartesianChartModelProducer()
     val temperatureModelProducer = CartesianChartModelProducer()
 
-    val chartData = combine(
+    val chartUiState: StateFlow<ChartUiState> = combine(
         historyRepository.observeHistory(),
         _selectedWindow
     ) { history, window ->
         val cutoff = System.currentTimeMillis() - (window.minutes * 60 * 1000)
-        history.filter { it.timestamp >= cutoff }
+        val filtered = history.filter { it.timestamp >= cutoff }
             .sortedBy { it.timestamp }
             .distinctBy { it.timestamp }
+        ChartUiState(filtered, window)
     }
-    .onEach { data ->
-        if (data.isNotEmpty()) {
+    .onEach { state ->
+        if (state.data.isNotEmpty()) {
             batteryLevelModelProducer.runTransaction {
                 lineSeries {
                     series(
-                        data.map { it.timestamp / 1000.0 },
-                        data.map { it.level.toDouble() }
+                        state.data.map { it.timestamp / 1000.0 },
+                        state.data.map { it.level.toDouble() }
                     )
                 }
             }
             temperatureModelProducer.runTransaction {
                 lineSeries {
                     series(
-                        data.map { it.timestamp / 1000.0 },
-                        data.map { it.temperatureC.toDouble() }
+                        state.data.map { it.timestamp / 1000.0 },
+                        state.data.map { it.temperatureC.toDouble() }
                     )
                 }
             }
@@ -85,7 +91,7 @@ class BatteryChartViewModel(
     .stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
-        emptyList()
+        ChartUiState()
     )
 
     val batteryStatus: StateFlow<BatteryInfo?> = batteryRepository.observeBatteryInfo()
@@ -114,7 +120,7 @@ class BatteryChartViewModel(
         null
     )
 
-    val alerts: StateFlow<List<DiagnosticAlert>> = combine(thermalStatus, chartData) { status, data ->
+    val alerts: StateFlow<List<DiagnosticAlert>> = combine(thermalStatus, chartUiState) { status, state ->
         val activeAlerts = mutableListOf<DiagnosticAlert>()
         
         // 1. Thermal Throttling Alert
@@ -129,7 +135,7 @@ class BatteryChartViewModel(
         }
 
         // 2. Battery Temperature Alert (Threshold: 40°C)
-        val latestTemp = status?.temperatureC ?: data.lastOrNull()?.temperatureC
+        val latestTemp = status?.temperatureC ?: state.data.lastOrNull()?.temperatureC
         if (latestTemp != null && latestTemp > 40f) {
             activeAlerts.add(
                 DiagnosticAlert(

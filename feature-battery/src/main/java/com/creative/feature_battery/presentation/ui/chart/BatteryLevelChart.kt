@@ -65,43 +65,31 @@ fun BatteryLevelChart(
     val labelColor = MaterialTheme.colorScheme.onSurface
     val guidelineColor = MaterialTheme.colorScheme.outlineVariant
 
-    val rangeProvider = remember {
-        object : CartesianLayerRangeProvider {
-            var minX: Double? = null
-            var maxX: Double? = null
-            var minY: Double? = null
-            var maxY: Double? = null
+    // Capture bounds to use inside the anonymous object
+    val fixedMinX = minX
+    val fixedMaxX = maxX
+    val fixedMinY = minY ?: 0.0
+    val fixedMaxY = maxY ?: 100.0
 
+    val rangeProvider = remember(fixedMinX, fixedMaxX, fixedMinY, fixedMaxY) {
+        object : CartesianLayerRangeProvider {
             override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                val start = (this.minX ?: minX).takeUnless { it.isNaN() } ?: 0.0
-                val end = (this.maxX ?: maxX).takeUnless { it.isNaN() } ?: (start + 1.0)
-                return if (start == end) start - 1.0 else start
+                return fixedMinX ?: minX
             }
 
             override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                val start = (this.minX ?: minX).takeUnless { it.isNaN() } ?: 0.0
-                val end = (this.maxX ?: maxX).takeUnless { it.isNaN() } ?: (start + 1.0)
-                return if (start == end) end + 1.0 else end
+                return fixedMaxX ?: maxX
             }
 
             override fun getMinY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                val start = (this.minY ?: minY).takeUnless { it.isNaN() } ?: 0.0
-                val end = (this.maxY ?: maxY).takeUnless { it.isNaN() } ?: (start + 1.0)
-                return if (start == end) start - 1.0 else start
+                return fixedMinY
             }
 
             override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                val start = (this.minY ?: minY).takeUnless { it.isNaN() } ?: 0.0
-                val end = (this.maxY ?: maxY).takeUnless { it.isNaN() } ?: (start + 1.0)
-                return if (start == end) end + 1.0 else end
+                return fixedMaxY
             }
         }
     }
-
-    rangeProvider.minX = minX
-    rangeProvider.maxX = maxX
-    rangeProvider.minY = minY ?: 0.0
-    rangeProvider.maxY = maxY ?: 100.0
 
     val lineLayer = rememberLineCartesianLayer(
         lineProvider = remember(lineColor) {
