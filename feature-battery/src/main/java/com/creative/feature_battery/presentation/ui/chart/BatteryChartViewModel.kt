@@ -72,7 +72,9 @@ class BatteryChartViewModel(
             batteryLevelModelProducer.runTransaction {
                 lineSeries {
                     series(
-                        state.data.map { it.timestamp / 1000.0 },
+                        // Use whole seconds to avoid Vico's precision limit (max 4 decimal places)
+                        // Floating point division by 1000.0 can cause issues with GCD calculation.
+                        state.data.map { (it.timestamp / 1000).toDouble() },
                         state.data.map { it.level.toDouble() }
                     )
                 }
@@ -80,7 +82,7 @@ class BatteryChartViewModel(
             temperatureModelProducer.runTransaction {
                 lineSeries {
                     series(
-                        state.data.map { it.timestamp / 1000.0 },
+                        state.data.map { (it.timestamp / 1000).toDouble() },
                         state.data.map { it.temperatureC.toDouble() }
                     )
                 }
