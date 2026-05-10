@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.creative.feature_battery"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 29

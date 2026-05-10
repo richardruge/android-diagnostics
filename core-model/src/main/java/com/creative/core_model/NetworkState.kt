@@ -7,6 +7,7 @@ data class NetworkState(
     val signalLevel: Int, // 0 to 4
     val ssid: String? = null,
     val frequencyMhz: Int? = null,
+    val wifiStandard: String? = null,
     val linkSpeedMbps: Int? = null,
     val ipAddress: String? = null
 )

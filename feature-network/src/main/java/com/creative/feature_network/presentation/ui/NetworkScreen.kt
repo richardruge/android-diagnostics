@@ -196,20 +196,44 @@ private fun LatencyTestCard(
 
 @Composable
 private fun WifiDetails(state: NetworkState) {
+    val signalRating = when (state.signalLevel) {
+        4 -> "Excellent"
+        3 -> "Good"
+        2 -> "Fair"
+        1 -> "Poor"
+        else -> "Very Poor"
+    }
+    
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         DetailCard(label = "SSID: ", value = state.ssid ?: "Unknown")
-        DetailCard(label = "Signal Strength: ", value = "${state.signalStrengthDbm} dBm")
-        DetailCard(label = "Frequency: ", value = "${state.frequencyMhz} MHz")
-        DetailCard(label = "Link Speed: ", value = "${state.linkSpeedMbps} Mbps")
+        DetailCard(
+            label = "Signal Strength: ", 
+            value = "${state.signalStrengthDbm} dBm ($signalRating)"
+        )
+        val frequencyValue = if (state.frequencyMhz != null) {
+            "${state.frequencyMhz} MHz" + (state.wifiStandard?.let { " ($it)" } ?: "")
+        } else {
+            "Unknown"
+        }
+        DetailCard(label = "Frequency: ", value = frequencyValue)
+        DetailCard(label = "Connection Rate: ", value = "${state.linkSpeedMbps} Mbps")
     }
 }
 
 @Composable
 private fun CellularDetails(state: NetworkState) {
+    val signalRating = when (state.signalLevel) {
+        4 -> "Excellent"
+        3 -> "Good"
+        2 -> "Fair"
+        1 -> "Poor"
+        else -> "Very Poor"
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        DetailCard(label = "Signal Level", value = "${state.signalLevel}/4")
+        DetailCard(label = "Signal Level", value = "${state.signalLevel}/4 ($signalRating)")
         state.signalStrengthDbm?.let {
-            DetailCard(label = "Signal Strength", value = "$it dBm")
+            DetailCard(label = "Signal Strength", value = "$it dBm ($signalRating)")
         }
     }
 }

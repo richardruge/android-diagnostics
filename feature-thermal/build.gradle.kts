@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.creative.feature_thermal"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 29

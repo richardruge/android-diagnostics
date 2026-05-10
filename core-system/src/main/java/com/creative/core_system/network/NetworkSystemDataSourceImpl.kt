@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.telephony.TelephonyManager
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withContext
+import android.util.Log
 import java.net.InetAddress
 
 class NetworkSystemDataSourceImpl(
@@ -62,6 +64,7 @@ class NetworkSystemDataSourceImpl(
         var signalLevel = 0
         var ssid: String? = null
         var freq: Int? = null
+        var wifiStandard: String? = null
         var linkSpeed: Int? = null
 
         if (type == NetworkType.WIFI) {
@@ -70,6 +73,18 @@ class NetworkSystemDataSourceImpl(
             signalLevel = WifiManager.calculateSignalLevel(wifiInfo.rssi, 5)
             ssid = wifiInfo.ssid.removeSurrounding("\"")
             freq = wifiInfo.frequency
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                wifiStandard = when (wifiInfo.wifiStandard) {
+                    ScanResult.WIFI_STANDARD_11BE -> "Wi-Fi 7"
+                    ScanResult.WIFI_STANDARD_11AX -> "Wi-Fi 6"
+                    ScanResult.WIFI_STANDARD_11AC -> "Wi-Fi 5"
+                    ScanResult.WIFI_STANDARD_11N -> "Wi-Fi 4"
+                    ScanResult.WIFI_STANDARD_LEGACY -> "Legacy"
+                    else -> "Unknown"
+                }
+            }
+            
             linkSpeed = wifiInfo.linkSpeed
         } else if (type == NetworkType.CELLULAR) {
             // Signal strength for cellular simplified
@@ -82,6 +97,7 @@ class NetworkSystemDataSourceImpl(
             signalLevel = signalLevel,
             ssid = ssid,
             frequencyMhz = freq,
+            wifiStandard = wifiStandard,
             linkSpeedMbps = linkSpeed,
             ipAddress = null
         )
