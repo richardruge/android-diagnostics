@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.creative.core_data.thermal.ThermalRepository
 import com.creative.core_model.ThermalSeverity
 import com.creative.feature_battery.domain.BatterySeverityEvaluator
+import com.creative.feature_battery.domain.model.BatteryHealthUi
 import com.creative.feature_battery.domain.model.BatteryInfo
 import com.creative.feature_battery.domain.model.Severity
 import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
@@ -21,6 +22,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlin.math.sin
 
 enum class TimeWindow(val minutes: Long) {
     MIN_15(15),
@@ -45,11 +48,19 @@ enum class AlertSeverity {
 }
 
 class BatteryChartViewModel(
-    historyRepository: BatteryHistoryRepository,
+    private val historyRepository: BatteryHistoryRepository,
     private val batteryRepository: BatteryRepository,
     private val thermalRepository: ThermalRepository,
     private val evaluator: BatterySeverityEvaluator
 ) : ViewModel() {
+
+    private val DEBUG_SEED_MOCK_DATA = true
+
+    init {
+        if (DEBUG_SEED_MOCK_DATA) {
+            seedMockData()
+        }
+    }
 
     private val _selectedWindow = MutableStateFlow(TimeWindow.HOUR_1)
     val selectedWindow: StateFlow<TimeWindow> = _selectedWindow
@@ -139,5 +150,47 @@ class BatteryChartViewModel(
 
     fun setWindow(window: TimeWindow) {
         _selectedWindow.value = window
+    }
+
+    private fun seedMockData() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            val twentyFourHoursAgo = now - (24 * 60 * 60 * 1000)
+
+            val interval = 15 * 60 * 1000
+            var currentTimestamp = twentyFourHoursAgo
+
+            while (currentTimestamp <= now) {
+                val hoursSinceStart = (currentTimestamp - twentyFourHoursAgo) / (1000.0 * 60 * 60)
+                val level = if (hoursSinceStart < 16) {
+                    (100 - (hoursSinceStart * 5)).toInt().coerceIn(0, 100)
+                } else {
+                    (20 + ((hoursSinceStart - 16) * 10)).toInt().coerceIn(0, 100)
+                }
+
+                val temp = 33f + 5f * sin(hoursSinceStart * 0.5).toFloat()
+
+                val info = BatteryInfo(
+                    level = level,
+                    temperatureC = temp,
+                    isCharging = hoursSinceStart >= 16,
+                    chargeRateMah = if (hoursSinceStart >= 16) 1500 else null,
+                    health = BatteryHealthUi.GOOD,
+                    capacityMah = 5000,
+                    voltageMv = 3800 + (level * 4),
+                    technology = "Li-ion",
+                    cycleCount = 150,
+                    stateOfHealth = 98,
+                    currentNowMa = if (hoursSinceStart >= 16) 1500 else -300,
+                    currentAverageMa = if (hoursSinceStart >= 16) 1400 else -280,
+                    maxChargingCurrentUa = 3000000,
+                    maxChargingVoltageMv = 5000,
+                    timestamp = currentTimestamp
+                )
+
+                historyRepository.record(info)
+                currentTimestamp += interval
+            }
+        }
     }
 }
