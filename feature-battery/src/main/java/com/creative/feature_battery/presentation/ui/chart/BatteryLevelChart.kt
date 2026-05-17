@@ -45,7 +45,8 @@ fun BatteryLevelChart(
         CartesianValueFormatter { _, x, _ ->
             if (x.isNaN()) "" else {
                 try {
-                    dateTimeFormatter.format(x.roundToLong() * 1000)
+                    // x is now in milliseconds
+                    dateTimeFormatter.format(x.roundToLong())
                 } catch (e: Exception) {
                     ""
                 }
@@ -74,19 +75,37 @@ fun BatteryLevelChart(
     val rangeProvider = remember(fixedMinX, fixedMaxX, fixedMinY, fixedMaxY) {
         object : CartesianLayerRangeProvider {
             override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                return fixedMinX ?: minX
+                val fixed = fixedMinX
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMaxX) fixed - 1.0 else fixed
+                }
+                if (!minX.isFinite()) return 0.0
+                return if (minX == maxX) minX - 1.0 else minX
             }
 
             override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                return fixedMaxX ?: maxX
+                val fixed = fixedMaxX
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMinX) fixed + 1.0 else fixed
+                }
+                if (!maxX.isFinite()) return 1.0
+                return if (minX == maxX) maxX + 1.0 else maxX
             }
 
             override fun getMinY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                return fixedMinY
+                if (fixedMinY.isFinite()) {
+                    return if (fixedMinY == fixedMaxY) fixedMinY - 1.0 else fixedMinY
+                }
+                if (!minY.isFinite()) return 0.0
+                return if (minY == maxY) minY - 1.0 else minY
             }
 
             override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                return fixedMaxY
+                if (fixedMaxY.isFinite()) {
+                    return if (fixedMinY == fixedMaxY) fixedMaxY + 1.0 else fixedMaxY
+                }
+                if (!maxY.isFinite()) return 100.0
+                return if (minY == maxY) maxY + 1.0 else maxY
             }
         }
     }

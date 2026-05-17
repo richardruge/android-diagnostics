@@ -43,7 +43,8 @@ fun TemperatureChart(
         CartesianValueFormatter { _, x, _ ->
             if (x.isNaN()) "" else {
                 try {
-                    dateTimeFormatter.format(x.roundToLong() * 1000)
+                    // x is now in milliseconds
+                    dateTimeFormatter.format(x.roundToLong())
                 } catch (e: Exception) {
                     ""
                 }
@@ -62,45 +63,52 @@ fun TemperatureChart(
     val lineColor = MaterialTheme.colorScheme.primary
     val labelColor = MaterialTheme.colorScheme.onSurface
 
-    // Use a stable range provider to avoid re-creating it every second
-    val rangeProvider = remember {
-        object : CartesianLayerRangeProvider {
-            var minX: Double? = null
-            var maxX: Double? = null
-            var minY: Double? = null
-            var maxY: Double? = null
+    // Capture bounds to avoid shadowing in the anonymous object
+    val fixedMinX = minX
+    val fixedMaxX = maxX
+    val fixedMinY = minY
+    val fixedMaxY = maxY
 
+    // Use a keyed range provider to ensure recomposition when bounds change
+    val rangeProvider = remember(fixedMinX, fixedMaxX, fixedMinY, fixedMaxY) {
+        object : CartesianLayerRangeProvider {
             override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                val start = (this.minX ?: minX).takeUnless { it.isNaN() } ?: 0.0
-                val end = (this.maxX ?: maxX).takeUnless { it.isNaN() } ?: (start + 1.0)
-                return if (start == end) start - 1.0 else start
+                val fixed = fixedMinX
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMaxX) fixed - 1.0 else fixed
+                }
+                if (!minX.isFinite()) return 0.0
+                return if (minX == maxX) minX - 1.0 else minX
             }
 
             override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                val start = (this.minX ?: minX).takeUnless { it.isNaN() } ?: 0.0
-                val end = (this.maxX ?: maxX).takeUnless { it.isNaN() } ?: (start + 1.0)
-                return if (start == end) end + 1.0 else end
+                val fixed = fixedMaxX
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMinX) fixed + 1.0 else fixed
+                }
+                if (!maxX.isFinite()) return 1.0
+                return if (minX == maxX) maxX + 1.0 else maxX
             }
 
             override fun getMinY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                val start = (this.minY ?: minY).takeUnless { it.isNaN() } ?: 0.0
-                val end = (this.maxY ?: maxY).takeUnless { it.isNaN() } ?: (start + 1.0)
-                return if (start == end) start - 1.0 else start
+                val fixed = fixedMinY
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMaxY) fixed - 1.0 else fixed
+                }
+                if (!minY.isFinite()) return 0.0
+                return if (minY == maxY) minY - 1.0 else minY
             }
 
             override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                val start = (this.minY ?: minY).takeUnless { it.isNaN() } ?: 0.0
-                val end = (this.maxY ?: maxY).takeUnless { it.isNaN() } ?: (start + 1.0)
-                return if (start == end) end + 1.0 else end
+                val fixed = fixedMaxY
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMinY) fixed + 1.0 else fixed
+                }
+                if (!maxY.isFinite()) return 100.0
+                return if (minY == maxY) maxY + 1.0 else maxY
             }
         }
     }
-
-    // Update the range provider's values without triggering a recomposition of the whole chart layer
-    rangeProvider.minX = minX
-    rangeProvider.maxX = maxX
-    rangeProvider.minY = minY
-    rangeProvider.maxY = maxY
 
     val lineLayer = rememberLineCartesianLayer(
         lineProvider = remember(lineColor) {

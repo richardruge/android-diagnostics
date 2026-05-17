@@ -36,10 +36,12 @@ fun BatteryChartScreen(
     // Use unified chartUiState to ensure data and its timeframe are always in sync
     val chartUiState by viewModel.chartUiState.collectAsStateWithLifecycle()
 
-    // Calculate chart bounds based on the window actually used for filtering
-    val currentTimeSeconds = remember(chartUiState.data) { System.currentTimeMillis() / 1000 }
-    val maxX = currentTimeSeconds.toDouble()
-    val minX = (currentTimeSeconds - (chartUiState.window.minutes * 60)).toDouble()
+    // Calculate chart bounds based on the state actually used for filtering.
+    // Keying on chartUiState ensures that if either data or window changes, bounds are recalculated.
+    // Use raw timestamps (milliseconds) for bounds.
+    val currentTimeMillis = remember(chartUiState) { System.currentTimeMillis().toDouble() }
+    val maxX = currentTimeMillis
+    val minX = currentTimeMillis - (chartUiState.window.minutes * 60 * 1000)
 
     Column(
         modifier = Modifier

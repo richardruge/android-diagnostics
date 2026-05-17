@@ -62,7 +62,9 @@ class BatteryChartViewModel(
         _selectedWindow
     ) { history, window ->
         val cutoff = System.currentTimeMillis() - (window.minutes * 60 * 1000)
-        val filtered = history.filter { it.timestamp >= cutoff }
+        val filtered = history.filter { 
+            it.timestamp >= cutoff && it.temperatureC.isFinite()
+        }
             .sortedBy { it.timestamp }
             .distinctBy { it.timestamp }
         ChartUiState(filtered, window)
@@ -72,9 +74,8 @@ class BatteryChartViewModel(
             batteryLevelModelProducer.runTransaction {
                 lineSeries {
                     series(
-                        // Use whole seconds to avoid Vico's precision limit (max 4 decimal places)
-                        // Floating point division by 1000.0 can cause issues with GCD calculation.
-                        state.data.map { (it.timestamp / 1000).toDouble() },
+                        // Use raw timestamp (milliseconds) as X value to avoid precision issues with Double division.
+                        state.data.map { it.timestamp.toDouble() },
                         state.data.map { it.level.toDouble() }
                     )
                 }
@@ -82,11 +83,15 @@ class BatteryChartViewModel(
             temperatureModelProducer.runTransaction {
                 lineSeries {
                     series(
-                        state.data.map { (it.timestamp / 1000).toDouble() },
+                        state.data.map { it.timestamp.toDouble() },
                         state.data.map { it.temperatureC.toDouble() }
                     )
                 }
             }
+        } else {
+            // Clear producers if there is no data
+            batteryLevelModelProducer.runTransaction { lineSeries { } }
+            temperatureModelProducer.runTransaction { lineSeries { } }
         }
     }
     .flowOn(Dispatchers.Default)

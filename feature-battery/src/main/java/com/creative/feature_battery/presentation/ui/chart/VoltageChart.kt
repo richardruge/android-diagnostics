@@ -42,13 +42,20 @@ fun VoltageChart(
     
     val bottomAxisValueFormatter = remember {
         CartesianValueFormatter { _, x, _ ->
-            dateTimeFormatter.format(x.roundToLong() * 1000)
+            if (x.isNaN()) "" else {
+                try {
+                    // x is now in milliseconds
+                    dateTimeFormatter.format(x.roundToLong())
+                } catch (e: Exception) {
+                    ""
+                }
+            }
         }
     }
     
     val startAxisValueFormatter = remember {
         CartesianValueFormatter { _, y, _ ->
-            "%.2fV".format(Locale.US, y / 1000f)
+            if (y.isNaN()) "" else "%.2fV".format(Locale.US, y / 1000f)
         }
     }
 
@@ -57,24 +64,51 @@ fun VoltageChart(
     val lineColor = Color(0xFF2196F3) // Blue for voltage
     val labelColor = MaterialTheme.colorScheme.onSurface
 
-    val rangeProvider = remember {
-        object : CartesianLayerRangeProvider {
-            var minX: Double? = null
-            var maxX: Double? = null
-            var minY: Double? = null
-            var maxY: Double? = null
+    // Capture bounds to avoid shadowing in the anonymous object
+    val fixedMinX = minX
+    val fixedMaxX = maxX
+    val fixedMinY = minY
+    val fixedMaxY = maxY
 
-            override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.minX ?: minX
-            override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.maxX ?: maxX
-            override fun getMinY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.minY ?: minY
-            override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore) = this.maxY ?: maxY
+    val rangeProvider = remember(fixedMinX, fixedMaxX, fixedMinY, fixedMaxY) {
+        object : CartesianLayerRangeProvider {
+            override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val fixed = fixedMinX
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMaxX) fixed - 1.0 else fixed
+                }
+                if (!minX.isFinite()) return 0.0
+                return if (minX == maxX) minX - 1.0 else minX
+            }
+
+            override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val fixed = fixedMaxX
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMinX) fixed + 1.0 else fixed
+                }
+                if (!maxX.isFinite()) return 1.0
+                return if (minX == maxX) maxX + 1.0 else maxX
+            }
+
+            override fun getMinY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val fixed = fixedMinY
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMaxY) fixed - 1.0 else fixed
+                }
+                if (!minY.isFinite()) return 0.0
+                return if (minY == maxY) minY - 100.0 else minY
+            }
+
+            override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                val fixed = fixedMaxY
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMinY) fixed + 1.0 else fixed
+                }
+                if (!maxY.isFinite()) return 5000.0
+                return if (minY == maxY) maxY + 100.0 else maxY
+            }
         }
     }
-
-    rangeProvider.minX = minX
-    rangeProvider.maxX = maxX
-    rangeProvider.minY = minY
-    rangeProvider.maxY = maxY
 
     val lineLayer = rememberLineCartesianLayer(
         lineProvider = remember(lineColor) {
