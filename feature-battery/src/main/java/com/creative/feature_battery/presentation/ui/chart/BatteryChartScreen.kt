@@ -21,6 +21,7 @@ import com.creative.core_model.ThermalStatus
 import com.creative.feature_battery.domain.model.BatteryInfo
 import com.creative.feature_battery.domain.model.ChargingRate
 import com.creative.feature_battery.domain.model.Severity
+import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,12 +37,32 @@ fun BatteryChartScreen(
     // Use unified chartUiState to ensure data and its timeframe are always in sync
     val chartUiState by viewModel.chartUiState.collectAsStateWithLifecycle()
 
+    // Sync producers with data state
+    // Keying on data AND window ensures the graph refreshes its viewport even if data list is same
+    LaunchedEffect(chartUiState.data, chartUiState.window) {
+        viewModel.batteryLevelModelProducer.runTransaction {
+            lineSeries {
+                series(
+                    chartUiState.data.map { it.timestamp.toDouble() },
+                    chartUiState.data.map { it.level.toDouble() }
+                )
+            }
+        }
+        viewModel.temperatureModelProducer.runTransaction {
+            lineSeries {
+                series(
+                    chartUiState.data.map { it.timestamp.toDouble() },
+                    chartUiState.data.map { it.temperatureC.toDouble() }
+                )
+            }
+        }
+    }
+
     // Calculate chart bounds based on the state actually used for filtering.
     // Keying on chartUiState ensures that if either data or window changes, bounds are recalculated.
     // Use raw timestamps (milliseconds) for bounds.
-    val currentTimeMillis = remember(chartUiState) { System.currentTimeMillis().toDouble() }
-    val maxX = currentTimeMillis
-    val minX = currentTimeMillis - (chartUiState.window.minutes * 60 * 1000)
+    val maxX = chartUiState.endTimestamp.toDouble()
+    val minX = maxX - (chartUiState.window.minutes * 60 * 1000)
 
     Column(
         modifier = Modifier
@@ -78,30 +99,34 @@ fun BatteryChartScreen(
             }
         } else {
             // Battery Level Chart
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Battery Level (%)", style = MaterialTheme.typography.titleSmall)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    BatteryLevelChart(
-                        modelProducer = viewModel.batteryLevelModelProducer,
-                        runAnimations = false,
-                        minX = minX,
-                        maxX = maxX
-                    )
+            key(chartUiState.window) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Battery Level (%)", style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        BatteryLevelChart(
+                            modelProducer = viewModel.batteryLevelModelProducer,
+                            runAnimations = false,
+                            minX = minX,
+                            maxX = maxX
+                        )
+                    }
                 }
             }
 
             // Temperature Chart
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Temperature (°C)", style = MaterialTheme.typography.titleSmall)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    TemperatureChart(
-                        modelProducer = viewModel.temperatureModelProducer,
-                        runAnimations = false,
-                        minX = minX,
-                        maxX = maxX
-                    )
+            key(chartUiState.window) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Temperature (°C)", style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        TemperatureChart(
+                            modelProducer = viewModel.temperatureModelProducer,
+                            runAnimations = false,
+                            minX = minX,
+                            maxX = maxX
+                        )
+                    }
                 }
             }
         }

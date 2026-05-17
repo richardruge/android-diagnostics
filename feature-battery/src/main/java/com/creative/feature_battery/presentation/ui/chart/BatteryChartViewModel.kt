@@ -10,7 +10,6 @@ import com.creative.feature_battery.domain.model.Severity
 import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
 import com.creative.feature_battery.domain.repository.BatteryRepository
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +30,8 @@ enum class TimeWindow(val minutes: Long) {
 
 data class ChartUiState(
     val data: List<BatteryInfo> = emptyList(),
-    val window: TimeWindow = TimeWindow.HOUR_1
+    val window: TimeWindow = TimeWindow.HOUR_1,
+    val endTimestamp: Long = System.currentTimeMillis()
 )
 
 data class DiagnosticAlert(
@@ -61,38 +61,15 @@ class BatteryChartViewModel(
         historyRepository.observeHistory(),
         _selectedWindow
     ) { history, window ->
-        val cutoff = System.currentTimeMillis() - (window.minutes * 60 * 1000)
+        val now = System.currentTimeMillis()
+        val cutoff = now - (window.minutes * 60 * 1000)
         val filtered = history.filter { 
             it.timestamp >= cutoff && it.temperatureC.isFinite()
         }
             .sortedBy { it.timestamp }
             .distinctBy { it.timestamp }
-        ChartUiState(filtered, window)
-    }
-    .onEach { state ->
-        if (state.data.isNotEmpty()) {
-            batteryLevelModelProducer.runTransaction {
-                lineSeries {
-                    series(
-                        // Use raw timestamp (milliseconds) as X value to avoid precision issues with Double division.
-                        state.data.map { it.timestamp.toDouble() },
-                        state.data.map { it.level.toDouble() }
-                    )
-                }
-            }
-            temperatureModelProducer.runTransaction {
-                lineSeries {
-                    series(
-                        state.data.map { it.timestamp.toDouble() },
-                        state.data.map { it.temperatureC.toDouble() }
-                    )
-                }
-            }
-        } else {
-            // Clear producers if there is no data
-            batteryLevelModelProducer.runTransaction { lineSeries { } }
-            temperatureModelProducer.runTransaction { lineSeries { } }
-        }
+        
+        ChartUiState(filtered, window, now)
     }
     .flowOn(Dispatchers.Default)
     .stateIn(
