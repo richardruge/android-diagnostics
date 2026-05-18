@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.math.sin
@@ -157,7 +156,7 @@ class BatteryChartViewModel(
             val now = System.currentTimeMillis()
             val twentyFourHoursAgo = now - (24 * 60 * 60 * 1000)
 
-            val interval = 15 * 60 * 1000
+            val interval = 1 * 60 * 1000
             var currentTimestamp = twentyFourHoursAgo
 
             while (currentTimestamp <= now) {
