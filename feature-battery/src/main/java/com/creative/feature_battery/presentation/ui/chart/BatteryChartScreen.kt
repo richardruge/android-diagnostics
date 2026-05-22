@@ -40,20 +40,22 @@ fun BatteryChartScreen(
     // Sync producers with data state
     // Keying on data AND window ensures the graph refreshes its viewport even if data list is same
     LaunchedEffect(chartUiState.data, chartUiState.window) {
-        viewModel.batteryLevelModelProducer.runTransaction {
-            lineSeries {
-                series(
-                    chartUiState.data.map { it.timestamp.toDouble() },
-                    chartUiState.data.map { it.level.toDouble() }
-                )
+        if (chartUiState.data.isNotEmpty()) {
+            viewModel.batteryLevelModelProducer.runTransaction {
+                lineSeries {
+                    series(
+                        chartUiState.data.map { it.timestamp.toDouble() },
+                        chartUiState.data.map { it.level.toDouble() }
+                    )
+                }
             }
-        }
-        viewModel.temperatureModelProducer.runTransaction {
-            lineSeries {
-                series(
-                    chartUiState.data.map { it.timestamp.toDouble() },
-                    chartUiState.data.map { it.temperatureC.toDouble() }
-                )
+            viewModel.temperatureModelProducer.runTransaction {
+                lineSeries {
+                    series(
+                        chartUiState.data.map { it.timestamp.toDouble() },
+                        chartUiState.data.map { it.temperatureC.toDouble() }
+                    )
+                }
             }
         }
     }

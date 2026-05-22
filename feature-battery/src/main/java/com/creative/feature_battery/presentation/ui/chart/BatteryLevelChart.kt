@@ -18,16 +18,18 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLa
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
+import com.patrykandpatrick.vico.core.cartesian.CartesianDrawingContext
+import com.patrykandpatrick.vico.core.cartesian.CartesianMeasuringContext
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
+import com.patrykandpatrick.vico.core.cartesian.layer.CartesianLayerDimensions
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.common.Fill
-import java.text.SimpleDateFormat
 import java.util.Locale
-import kotlin.math.roundToLong
+import kotlin.math.roundToInt
 
 @Composable
 fun BatteryLevelChart(
@@ -39,16 +41,16 @@ fun BatteryLevelChart(
     maxY: Double? = null,
     runAnimations: Boolean = true
 ) {
-    val dateTimeFormatter = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
-    
-    val bottomAxisValueFormatter = remember {
+    val bottomAxisValueFormatter = remember(minX, maxX) {
         CartesianValueFormatter { _, x, _ ->
-            if (x.isNaN()) "" else {
-                try {
-                    // x is now in milliseconds
-                    dateTimeFormatter.format(x.roundToLong())
-                } catch (e: Exception) {
-                    ""
+            if (x.isNaN() || maxX == null || minX == null) "" else {
+                val rangeMinutes = (maxX - minX) / (60 * 1000)
+                if (rangeMinutes > 90) { // 24h window (1440 mins)
+                    val diffHours = (x - maxX) / (3600 * 1000)
+                    "${diffHours.roundToInt()}"
+                } else {
+                    val diffMinutes = (x - maxX) / (60 * 1000)
+                    "${diffMinutes.roundToInt()}"
                 }
             }
         }
@@ -133,7 +135,6 @@ fun BatteryLevelChart(
         bottomAxis = HorizontalAxis.rememberBottom(
             label = rememberAxisLabelComponent(color = labelColor),
             valueFormatter = bottomAxisValueFormatter,
-            labelRotationDegrees = 45f,
             guideline = rememberLineComponent(fill = Fill(guidelineColor.toArgb()), thickness = 1.dp)
         )
     )

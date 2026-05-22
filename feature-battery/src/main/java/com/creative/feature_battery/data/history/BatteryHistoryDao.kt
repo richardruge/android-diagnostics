@@ -10,6 +10,9 @@ interface BatteryHistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entry: BatteryHistoryEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entries: List<BatteryHistoryEntity>)
+
 
     // In BatteryHistoryDao.kt
     @Query("SELECT * FROM battery_history WHERE timestamp > :since ORDER BY timestamp DESC")
