@@ -6,4 +6,5 @@ import kotlinx.coroutines.flow.Flow
 interface BatteryHistoryRepository {
     suspend fun record(info: BatteryInfo)
     fun observeHistory(): Flow<List<BatteryInfo>>
+    fun observeHistory(since: Long): Flow<List<BatteryInfo>>
 }

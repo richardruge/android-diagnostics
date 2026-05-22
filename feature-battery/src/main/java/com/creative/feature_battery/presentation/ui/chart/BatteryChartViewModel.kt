@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -46,6 +48,7 @@ enum class AlertSeverity {
     INFO, WARNING, CRITICAL
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class BatteryChartViewModel(
     private val historyRepository: BatteryHistoryRepository,
     private val batteryRepository: BatteryRepository,
@@ -67,19 +70,15 @@ class BatteryChartViewModel(
     val batteryLevelModelProducer = CartesianChartModelProducer()
     val temperatureModelProducer = CartesianChartModelProducer()
 
-    val chartUiState: StateFlow<ChartUiState> = combine(
-        historyRepository.observeHistory(),
-        _selectedWindow
-    ) { history, window ->
-        val now = System.currentTimeMillis()
-        val cutoff = now - (window.minutes * 60 * 1000)
-        val filtered = history.filter { 
-            it.timestamp >= cutoff && it.temperatureC.isFinite()
+    val chartUiState: StateFlow<ChartUiState> = _selectedWindow.flatMapLatest { window ->
+        val cutoff = System.currentTimeMillis() - (window.minutes * 60 * 1000)
+        historyRepository.observeHistory(cutoff).map { history ->
+            val now = System.currentTimeMillis()
+            val filtered = history.filter { it.temperatureC.isFinite() }
+                .sortedBy { it.timestamp }
+                .distinctBy { it.timestamp }
+            ChartUiState(filtered, window, now)
         }
-            .sortedBy { it.timestamp }
-            .distinctBy { it.timestamp }
-        
-        ChartUiState(filtered, window, now)
     }
     .flowOn(Dispatchers.Default)
     .stateIn(
