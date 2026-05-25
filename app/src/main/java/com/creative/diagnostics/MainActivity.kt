@@ -1,6 +1,7 @@
 package com.creative.diagnostics
 
 import android.Manifest
+import android.app.Activity
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -8,9 +9,11 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -20,11 +23,15 @@ import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -53,6 +60,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         val permissionsToRequest = mutableListOf<String>()
@@ -75,7 +83,18 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            MaterialTheme {
+            val darkTheme = isSystemInDarkTheme()
+            val colorScheme = if (darkTheme) darkColorScheme() else lightColorScheme()
+            
+            val view = LocalView.current
+            if (!view.isInEditMode) {
+                SideEffect {
+                    val window = (view.context as Activity).window
+                    WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+                }
+            }
+
+            MaterialTheme(colorScheme = colorScheme) {
                 MainContent()
             }
         }
