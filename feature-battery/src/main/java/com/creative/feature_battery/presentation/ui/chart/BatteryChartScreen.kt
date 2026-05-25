@@ -23,6 +23,7 @@ import com.creative.core_model.ThermalStatus
 import com.creative.feature_battery.domain.model.BatteryInfo
 import com.creative.feature_battery.domain.model.ChargingRate
 import com.creative.feature_battery.domain.model.Severity
+import com.creative.feature_battery.presentation.ui.CircularBatteryGauge
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import org.koin.androidx.compose.koinViewModel
 
@@ -61,6 +62,22 @@ fun BatteryChartScreen(
                     )
                 }
             }
+            viewModel.voltageModelProducer.runTransaction {
+                lineSeries {
+                    series(
+                        chartUiState.data.map { it.timestamp.toDouble() },
+                        chartUiState.data.map { it.voltageMv?.toDouble() ?: 0.0 }
+                    )
+                }
+            }
+            viewModel.currentModelProducer.runTransaction {
+                lineSeries {
+                    series(
+                        chartUiState.data.map { it.timestamp.toDouble() },
+                        chartUiState.data.map { it.currentNowMa?.toDouble() ?: 0.0 }
+                    )
+                }
+            }
         }
     }
 
@@ -79,6 +96,16 @@ fun BatteryChartScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularBatteryGauge(
+                            level = latestInfo?.level ?: 0,
+                            health = latestInfo?.stateOfHealth ?: 100,
+                            size = 200.dp
+                        )
+                    }
                     RealTimeMetricsSection(latestInfo, healthSeverity, thermalStatus)
                     ChargerRatingCard(latestInfo)
                 }
@@ -139,6 +166,41 @@ fun BatteryChartScreen(
                                     }
                                 }
                             }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                key(chartUiState.window) {
+                                    OutlinedCard(modifier = Modifier.weight(1f)) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Text("Voltage (V)", style = MaterialTheme.typography.titleSmall)
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            VoltageChart(
+                                                modelProducer = viewModel.voltageModelProducer,
+                                                runAnimations = false,
+                                                minX = minX,
+                                                maxX = maxX
+                                            )
+                                        }
+                                    }
+                                }
+
+                                key(chartUiState.window) {
+                                    OutlinedCard(modifier = Modifier.weight(1f)) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Text("Current (mA)", style = MaterialTheme.typography.titleSmall)
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            CurrentChart(
+                                                modelProducer = viewModel.currentModelProducer,
+                                                runAnimations = false,
+                                                minX = minX,
+                                                maxX = maxX
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         } else {
                             key(chartUiState.window) {
                                 OutlinedCard(modifier = Modifier.fillMaxWidth()) {
@@ -162,6 +224,36 @@ fun BatteryChartScreen(
                                         Spacer(modifier = Modifier.height(8.dp))
                                         TemperatureChart(
                                             modelProducer = viewModel.temperatureModelProducer,
+                                            runAnimations = false,
+                                            minX = minX,
+                                            maxX = maxX
+                                        )
+                                    }
+                                }
+                            }
+
+                            key(chartUiState.window) {
+                                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text("Voltage (V)", style = MaterialTheme.typography.titleSmall)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        VoltageChart(
+                                            modelProducer = viewModel.voltageModelProducer,
+                                            runAnimations = false,
+                                            minX = minX,
+                                            maxX = maxX
+                                        )
+                                    }
+                                }
+                            }
+
+                            key(chartUiState.window) {
+                                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text("Current (mA)", style = MaterialTheme.typography.titleSmall)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        CurrentChart(
+                                            modelProducer = viewModel.currentModelProducer,
                                             runAnimations = false,
                                             minX = minX,
                                             maxX = maxX

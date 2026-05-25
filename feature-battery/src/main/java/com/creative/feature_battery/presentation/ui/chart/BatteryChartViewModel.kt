@@ -69,6 +69,8 @@ class BatteryChartViewModel(
 
     val batteryLevelModelProducer = CartesianChartModelProducer()
     val temperatureModelProducer = CartesianChartModelProducer()
+    val voltageModelProducer = CartesianChartModelProducer()
+    val currentModelProducer = CartesianChartModelProducer()
 
     val chartUiState: StateFlow<ChartUiState> = _selectedWindow.flatMapLatest { window ->
         val cutoff = System.currentTimeMillis() - (window.minutes * 60 * 1000)
