@@ -72,7 +72,14 @@ class BatteryChartViewModel(
 
     val chartUiState: StateFlow<ChartUiState> = _selectedWindow.flatMapLatest { window ->
         val cutoff = System.currentTimeMillis() - (window.minutes * 60 * 1000)
-        historyRepository.observeHistory(cutoff).map { history ->
+        val samplingRate = when (window) {
+            TimeWindow.HOUR_24 -> 10 // Downsample to every 10th point for 24h view
+            TimeWindow.HOUR_1 -> 2   // Every 2nd point for 1h
+            else -> 1
+        }
+        
+        // Fetch sampled data with a safety limit to prevent CursorWindow size crashes (2MB limit)
+        historyRepository.observeHistorySampled(cutoff, samplingRate, 2000).map { history ->
             val now = System.currentTimeMillis()
             val filtered = history.filter { it.temperatureC.isFinite() }
                 .sortedBy { it.timestamp }

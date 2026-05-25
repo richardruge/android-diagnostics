@@ -19,8 +19,11 @@ class BatteryHistoryRepositoryImpl(
     override fun observeHistory(): Flow<List<BatteryInfo>> =
         dao.observeHistory().map { list -> list.map { it.toDomain() } }
 
-    override fun observeHistory(since: Long): Flow<List<BatteryInfo>> =
-        dao.observeRecentHistory(since).map { list -> list.map { it.toDomain() } }
+    override fun observeHistory(since: Long, limit: Int): Flow<List<BatteryInfo>> =
+        dao.observeRecentHistory(since, limit).map { list -> list.map { it.toDomain() } }
+
+    override fun observeHistorySampled(since: Long, samplingRate: Int, limit: Int): Flow<List<BatteryInfo>> =
+        dao.observeSampledHistory(since, samplingRate, limit).map { list -> list.map { it.toDomain() } }
 }
 
 // Mapping extensions
