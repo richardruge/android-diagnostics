@@ -9,14 +9,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -74,15 +81,32 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun MainContent() {
         val navController = rememberNavController()
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentDestination = navBackStackEntry?.destination
+        
+        val title = remember(currentDestination) {
+            when (currentDestination?.route) {
+                "battery" -> "Battery Diagnostics"
+                "network" -> "Network Diagnostics"
+                else -> "Android Diagnostics"
+            }
+        }
+
         Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text(title) },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    )
+                )
+            },
             bottomBar = {
                 NavigationBar {
-                    val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentDestination = navBackStackEntry?.destination
-
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.BatteryFull, contentDescription = null) },
                         label = { Text("Battery") },
@@ -114,17 +138,31 @@ class MainActivity : ComponentActivity() {
                 }
             }
         ) { innerPadding ->
-            NavHost(
-                navController = navController,
-                startDestination = "battery",
-                modifier = Modifier.padding(innerPadding)
+            Surface(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .padding(8.dp)
+                    .fillMaxSize()
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(12.dp)
             ) {
-                composable("battery") {
-                    val viewModel: BatteryChartViewModel = koinViewModel()
-                    BatteryChartScreen(viewModel = viewModel)
-                }
-                composable("network") {
-                    NetworkScreen()
+                NavHost(
+                    navController = navController,
+                    startDestination = "battery",
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    composable("battery") {
+                        val viewModel: BatteryChartViewModel = koinViewModel()
+                        BatteryChartScreen(viewModel = viewModel)
+                    }
+                    composable("network") {
+                        NetworkScreen()
+                    }
                 }
             }
         }

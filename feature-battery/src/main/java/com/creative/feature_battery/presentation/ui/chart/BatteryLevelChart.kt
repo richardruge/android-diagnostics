@@ -145,7 +145,7 @@ fun BatteryLevelChart(
         scrollState = scrollState,
         modifier = modifier
             .fillMaxWidth()
-            .height(280.dp),
+            .height(200.dp),
         animationSpec = if (runAnimations) null else snap()
     )
 }

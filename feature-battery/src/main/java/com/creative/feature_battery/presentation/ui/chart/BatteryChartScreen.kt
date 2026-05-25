@@ -37,8 +37,10 @@ fun BatteryChartScreen(
     // Use unified chartUiState to ensure data and its timeframe are always in sync
     val chartUiState by viewModel.chartUiState.collectAsStateWithLifecycle()
 
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Metrics", "Trends")
+
     // Sync producers with data state
-    // Keying on data AND window ensures the graph refreshes its viewport even if data list is same
     LaunchedEffect(chartUiState.data, chartUiState.window) {
         if (chartUiState.data.isNotEmpty()) {
             viewModel.batteryLevelModelProducer.runTransaction {
@@ -60,74 +62,93 @@ fun BatteryChartScreen(
         }
     }
 
-    // Calculate chart bounds based on the state actually used for filtering.
-    // Keying on chartUiState ensures that if either data or window changes, bounds are recalculated.
-    // Use raw timestamps (milliseconds) for bounds.
     val maxX = chartUiState.endTimestamp.toDouble()
     val minX = maxX - (chartUiState.window.minutes * 60 * 1000)
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        Text(
-            text = "Battery Trends",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
-
-        TimeWindowSelector(
-            selectedWindow = selectedWindow,
-            onWindowSelected = viewModel::setWindow
-        )
-
-        // Real-time Power & Health Summary
-        RealTimeMetricsSection(latestInfo, healthSeverity, thermalStatus)
-
-        // Charger Rating (if charging)
-        ChargerRatingCard(latestInfo)
-
-        if (chartUiState.data.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No data available for the selected period", style = MaterialTheme.typography.bodyMedium)
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.primary,
+            divider = {}
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index },
+                    text = { Text(title) }
+                )
             }
-        } else {
-            // Battery Level Chart
-            key(chartUiState.window) {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Battery Level (%)", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        BatteryLevelChart(
-                            modelProducer = viewModel.batteryLevelModelProducer,
-                            runAnimations = false,
-                            minX = minX,
-                            maxX = maxX
-                        )
+        }
+
+        Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            when (selectedTabIndex) {
+                0 -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        RealTimeMetricsSection(latestInfo, healthSeverity, thermalStatus)
+                        ChargerRatingCard(latestInfo)
                     }
                 }
-            }
-
-            // Temperature Chart
-            key(chartUiState.window) {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Temperature (°C)", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        TemperatureChart(
-                            modelProducer = viewModel.temperatureModelProducer,
-                            runAnimations = false,
-                            minX = minX,
-                            maxX = maxX
+                1 -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        TimeWindowSelector(
+                            selectedWindow = selectedWindow,
+                            onWindowSelected = viewModel::setWindow
                         )
+
+                        if (chartUiState.data.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("No data available for the selected period", style = MaterialTheme.typography.bodyMedium)
+                            }
+                        } else {
+                            key(chartUiState.window) {
+                                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text("Battery Level (%)", style = MaterialTheme.typography.titleSmall)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        BatteryLevelChart(
+                                            modelProducer = viewModel.batteryLevelModelProducer,
+                                            runAnimations = false,
+                                            minX = minX,
+                                            maxX = maxX
+                                        )
+                                    }
+                                }
+                            }
+
+                            key(chartUiState.window) {
+                                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text("Temperature (°C)", style = MaterialTheme.typography.titleSmall)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        TemperatureChart(
+                                            modelProducer = viewModel.temperatureModelProducer,
+                                            runAnimations = false,
+                                            minX = minX,
+                                            maxX = maxX
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
