@@ -1,5 +1,6 @@
 package com.creative.feature_battery.presentation.ui.chart
 
+import android.content.res.Configuration
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -27,6 +29,7 @@ import org.koin.androidx.compose.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BatteryChartScreen(
+    showTrends: Boolean = false,
     viewModel: BatteryChartViewModel = koinViewModel()
 ) {
     val latestInfo by viewModel.batteryStatus.collectAsStateWithLifecycle()
@@ -36,9 +39,8 @@ fun BatteryChartScreen(
     
     // Use unified chartUiState to ensure data and its timeframe are always in sync
     val chartUiState by viewModel.chartUiState.collectAsStateWithLifecycle()
-
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Metrics", "Trends")
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     // Sync producers with data state
     LaunchedEffect(chartUiState.data, chartUiState.window) {
@@ -69,54 +71,73 @@ fun BatteryChartScreen(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        TabRow(
-            selectedTabIndex = selectedTabIndex,
-            containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.primary,
-            divider = {}
-        ) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index },
-                    text = { Text(title) }
-                )
-            }
-        }
-
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            when (selectedTabIndex) {
-                0 -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        RealTimeMetricsSection(latestInfo, healthSeverity, thermalStatus)
-                        ChargerRatingCard(latestInfo)
-                    }
+            if (!showTrends) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    RealTimeMetricsSection(latestInfo, healthSeverity, thermalStatus)
+                    ChargerRatingCard(latestInfo)
                 }
-                1 -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        TimeWindowSelector(
-                            selectedWindow = selectedWindow,
-                            onWindowSelected = viewModel::setWindow
-                        )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    TimeWindowSelector(
+                        selectedWindow = selectedWindow,
+                        onWindowSelected = viewModel::setWindow
+                    )
 
-                        if (chartUiState.data.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp),
-                                contentAlignment = Alignment.Center
+                    if (chartUiState.data.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No data available for the selected period", style = MaterialTheme.typography.bodyMedium)
+                        }
+                    } else {
+                        if (isLandscape) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Text("No data available for the selected period", style = MaterialTheme.typography.bodyMedium)
+                                key(chartUiState.window) {
+                                    OutlinedCard(modifier = Modifier.weight(1f)) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Text("Battery Level (%)", style = MaterialTheme.typography.titleSmall)
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            BatteryLevelChart(
+                                                modelProducer = viewModel.batteryLevelModelProducer,
+                                                runAnimations = false,
+                                                minX = minX,
+                                                maxX = maxX
+                                            )
+                                        }
+                                    }
+                                }
+
+                                key(chartUiState.window) {
+                                    OutlinedCard(modifier = Modifier.weight(1f)) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Text("Temperature (°C)", style = MaterialTheme.typography.titleSmall)
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            TemperatureChart(
+                                                modelProducer = viewModel.temperatureModelProducer,
+                                                runAnimations = false,
+                                                minX = minX,
+                                                maxX = maxX
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         } else {
                             key(chartUiState.window) {

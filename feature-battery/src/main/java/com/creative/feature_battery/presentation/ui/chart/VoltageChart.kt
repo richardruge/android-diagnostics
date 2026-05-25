@@ -146,7 +146,7 @@ fun VoltageChart(
         scrollState = scrollState,
         modifier = modifier
             .fillMaxWidth()
-            .height(200.dp),
+            .height(160.dp),
         animationSpec = if (runAnimations) null else snap()
     )
 }

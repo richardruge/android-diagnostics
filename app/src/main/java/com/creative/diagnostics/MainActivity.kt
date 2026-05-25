@@ -15,17 +15,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryFull
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.NetworkCheck
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
@@ -42,6 +47,7 @@ import com.creative.feature_battery.presentation.ui.chart.BatteryChartScreen
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
 import com.creative.feature_battery.service.BatteryMonitoringService
 import com.creative.feature_network.presentation.ui.NetworkScreen
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
@@ -106,45 +112,61 @@ class MainActivity : ComponentActivity() {
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
+        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+        val scope = rememberCoroutineScope()
         
         val title = remember(currentDestination) {
             when (currentDestination?.route) {
-                "battery" -> "Battery Diagnostics"
+                "battery_metrics" -> "Battery Metrics"
+                "battery_trends" -> "Battery Trends"
                 "network" -> "Network Diagnostics"
                 else -> "Android Diagnostics"
             }
         }
 
-        Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text(title) },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    )
-                )
-            },
-            bottomBar = {
-                NavigationBar {
-                    NavigationBarItem(
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                ModalDrawerSheet {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    NavigationDrawerItem(
                         icon = { Icon(Icons.Default.BatteryFull, contentDescription = null) },
-                        label = { Text("Battery") },
-                        selected = currentDestination?.hierarchy?.any { it.route == "battery" } == true,
+                        label = { Text("Battery Metrics") },
+                        selected = currentDestination?.hierarchy?.any { it.route == "battery_metrics" } == true,
                         onClick = {
-                            navController.navigate("battery") {
+                            scope.launch { drawerState.close() }
+                            navController.navigate("battery_metrics") {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
                                 launchSingleTop = true
                                 restoreState = true
                             }
-                        }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
-                    NavigationBarItem(
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Timeline, contentDescription = null) },
+                        label = { Text("Battery Trends") },
+                        selected = currentDestination?.hierarchy?.any { it.route == "battery_trends" } == true,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            navController.navigate("battery_trends") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                    NavigationDrawerItem(
                         icon = { Icon(Icons.Default.NetworkCheck, contentDescription = null) },
-                        label = { Text("Network") },
+                        label = { Text("Network Diagnostics") },
                         selected = currentDestination?.hierarchy?.any { it.route == "network" } == true,
                         onClick = {
+                            scope.launch { drawerState.close() }
                             navController.navigate("network") {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
@@ -152,35 +174,56 @@ class MainActivity : ComponentActivity() {
                                 launchSingleTop = true
                                 restoreState = true
                             }
-                        }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
                 }
             }
-        ) { innerPadding ->
-            Surface(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .padding(8.dp)
-                    .fillMaxSize()
-                    .border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        shape = RoundedCornerShape(12.dp)
-                    ),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                NavHost(
-                    navController = navController,
-                    startDestination = "battery",
-                    modifier = Modifier.padding(top = 8.dp)
+        ) {
+            Scaffold(
+                topBar = {
+                    CenterAlignedTopAppBar(
+                        title = { Text(title) },
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                        )
+                    )
+                }
+            ) { innerPadding ->
+                Surface(
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .padding(8.dp)
+                        .fillMaxSize()
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                            shape = RoundedCornerShape(12.dp)
+                        ),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    composable("battery") {
-                        val viewModel: BatteryChartViewModel = koinViewModel()
-                        BatteryChartScreen(viewModel = viewModel)
-                    }
-                    composable("network") {
-                        NetworkScreen()
+                    NavHost(
+                        navController = navController,
+                        startDestination = "battery_metrics",
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        composable("battery_metrics") {
+                            val viewModel: BatteryChartViewModel = koinViewModel()
+                            BatteryChartScreen(showTrends = false, viewModel = viewModel)
+                        }
+                        composable("battery_trends") {
+                            val viewModel: BatteryChartViewModel = koinViewModel()
+                            BatteryChartScreen(showTrends = true, viewModel = viewModel)
+                        }
+                        composable("network") {
+                            NetworkScreen()
+                        }
                     }
                 }
             }
