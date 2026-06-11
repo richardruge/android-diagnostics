@@ -7,5 +7,6 @@ data class NetworkUiState(
     val isLoading: Boolean = true,
     val isPingTesting: Boolean = false,
     val lastPingMs: Long? = null,
+    val pingHistory: List<Long> = emptyList(),
     val errorMessage: String? = null
 )

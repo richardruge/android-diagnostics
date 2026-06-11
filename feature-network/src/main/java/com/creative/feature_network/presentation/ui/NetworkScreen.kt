@@ -32,6 +32,7 @@ fun NetworkScreen(viewModel: NetworkViewModel = koinViewModel()) {
                 state = uiState.networkState!!,
                 isPingTesting = uiState.isPingTesting,
                 lastPingMs = uiState.lastPingMs,
+                pingHistory = uiState.pingHistory,
                 onRunPingTest = { viewModel.runPingTest() }
             )
         }
@@ -57,6 +58,7 @@ private fun NetworkContent(
     state: NetworkState,
     isPingTesting: Boolean,
     lastPingMs: Long?,
+    pingHistory: List<Long>,
     onRunPingTest: () -> Unit
 ) {
     Column(
@@ -71,7 +73,7 @@ private fun NetworkContent(
         ConnectionStatusCard(state)
 
         if (state.isConnected) {
-            LatencyTestCard(isPingTesting, lastPingMs, onRunPingTest)
+            LatencyTestCard(isPingTesting, lastPingMs, pingHistory, onRunPingTest)
 
             Text(
                 text = "Connection Details",
@@ -131,6 +133,7 @@ private fun ConnectionStatusCard(state: NetworkState) {
 private fun LatencyTestCard(
     isTesting: Boolean,
     lastPingMs: Long?,
+    pingHistory: List<Long>,
     onRun: () -> Unit
 ) {
     OutlinedCard(
@@ -153,7 +156,7 @@ private fun LatencyTestCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     val pingText = when {
                         isTesting -> "Testing..."
                         lastPingMs != null -> "$lastPingMs ms"
@@ -176,6 +179,17 @@ private fun LatencyTestCard(
                     Text(
                         text = "8.8.8.8 (Google DNS)",
                         style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                if (pingHistory.isNotEmpty()) {
+                    LatencySparkline(
+                        history = pingHistory,
+                        modifier = Modifier
+                            .height(40.dp)
+                            .width(80.dp)
+                            .padding(horizontal = 8.dp),
+                        lineColor = MaterialTheme.colorScheme.primary
                     )
                 }
                 

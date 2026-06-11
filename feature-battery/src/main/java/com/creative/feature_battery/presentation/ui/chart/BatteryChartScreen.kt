@@ -24,6 +24,8 @@ import com.creative.feature_battery.domain.model.BatteryInfo
 import com.creative.feature_battery.domain.model.ChargingRate
 import com.creative.feature_battery.domain.model.Severity
 import com.creative.feature_battery.presentation.ui.CircularBatteryGauge
+import com.creative.feature_battery.presentation.ui.SegmentedHealthIndicator
+import com.creative.feature_battery.presentation.ui.ThermalThermometer
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import org.koin.androidx.compose.koinViewModel
 
@@ -396,13 +398,54 @@ private fun RealTimeMetricsSection(
 ) {
     if (info == null) return
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(
             text = "Real-time Metrics",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
         
+        // Thermal status hero
+        thermalStatus?.let { thermal ->
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.outlinedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    ThermalThermometer(
+                        severity = thermal.severity,
+                        temperatureC = thermal.temperatureC,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "System Thermal Status",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "The system is currently in a ${thermal.severity.name} thermal state.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Source: ${thermal.status}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+        }
+
         // Row 1: Power & Health
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -433,7 +476,19 @@ private fun RealTimeMetricsSection(
             )
         }
 
-        // Row 2: Voltage & Capacity
+        // Capacity Retention Card
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                SegmentedHealthIndicator(
+                    stateOfHealth = info.stateOfHealth ?: 100,
+                    cycleCount = info.cycleCount
+                )
+            }
+        }
+
+        // Row 2: Voltage & Technology
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -446,33 +501,12 @@ private fun RealTimeMetricsSection(
                 color = MaterialTheme.colorScheme.tertiary
             )
 
-            val wearSubtitle = when {
-                info.stateOfHealth != null -> "Wear: ${100 - info.stateOfHealth}%"
-                info.cycleCount != null -> "Cycles: ${info.cycleCount}"
-                else -> info.technology ?: "Design Cap."
-            }
-
             MetricCard(
                 modifier = Modifier.weight(1f),
                 title = "Capacity",
                 value = info.capacityMah?.let { "$it mAh" } ?: "N/A",
-                subtitle = wearSubtitle,
+                subtitle = "Design Capacity",
                 color = MaterialTheme.colorScheme.primary
-            )
-        }
-
-        // Row 3: Thermal Status
-        thermalStatus?.let { thermal ->
-            MetricCard(
-                modifier = Modifier.fillMaxWidth(),
-                title = "System Thermal Status",
-                value = thermal.severity.name,
-                subtitle = "Source: ${thermal.status} (${"%.1f".format(thermal.temperatureC)}°C)",
-                color = when (thermal.severity.name) {
-                    "CRITICAL" -> MaterialTheme.colorScheme.error
-                    "HOT" -> Color(0xFFFFA000)
-                    else -> Color(0xFF4CAF50)
-                }
             )
         }
     }

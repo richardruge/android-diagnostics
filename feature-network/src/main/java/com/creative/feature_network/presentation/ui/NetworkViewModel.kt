@@ -13,16 +13,19 @@ class NetworkViewModel(
 ) : ViewModel() {
 
     private val _pingState = MutableStateFlow<Long?>(null)
+    private val _pingHistory = MutableStateFlow<List<Long>>(emptyList())
     private val _isPingTesting = MutableStateFlow(false)
 
     val uiState: StateFlow<NetworkUiState> = combine(
         repository.observeNetworkState(),
         _pingState,
+        _pingHistory,
         _isPingTesting
-    ) { state, ping, testing ->
+    ) { state, ping, history, testing ->
         NetworkUiState(
             networkState = state,
             lastPingMs = ping,
+            pingHistory = history,
             isPingTesting = testing,
             isLoading = false
         )
@@ -37,6 +40,9 @@ class NetworkViewModel(
             _isPingTesting.value = true
             val result = repository.runPingTest()
             _pingState.value = result
+            if (result != null) {
+                _pingHistory.value = (_pingHistory.value + result).takeLast(20)
+            }
             _isPingTesting.value = false
         }
     }
