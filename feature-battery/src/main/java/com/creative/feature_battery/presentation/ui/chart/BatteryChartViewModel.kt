@@ -56,7 +56,7 @@ class BatteryChartViewModel(
     private val evaluator: BatterySeverityEvaluator
 ) : ViewModel() {
 
-    private val DEBUG_SEED_MOCK_DATA = true
+    private val DEBUG_SEED_MOCK_DATA = false
 
     init {
         if (DEBUG_SEED_MOCK_DATA) {

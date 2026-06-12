@@ -47,7 +47,7 @@ fun BatteryChartScreen(
 
     // Sync producers with data state
     LaunchedEffect(chartUiState.data, chartUiState.window) {
-        if (chartUiState.data.isNotEmpty()) {
+        if (chartUiState.data.size >= 2) {
             viewModel.batteryLevelModelProducer.runTransaction {
                 lineSeries {
                     series(
@@ -123,14 +123,19 @@ fun BatteryChartScreen(
                         onWindowSelected = viewModel::setWindow
                     )
 
-                    if (chartUiState.data.isEmpty()) {
+                    if (chartUiState.data.size < 2) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(200.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("No data available for the selected period", style = MaterialTheme.typography.bodyMedium)
+                            val message = if (chartUiState.data.isEmpty()) {
+                                "No data available for the selected period"
+                            } else {
+                                "Collecting more data points for trends..."
+                            }
+                            Text(message, style = MaterialTheme.typography.bodyMedium)
                         }
                     } else {
                         if (isLandscape) {
