@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun CircularBatteryGauge(
     level: Int,
-    health: Int, // State of Health 0-100
+    health: Int?, // Changed to nullable
     modifier: Modifier = Modifier,
     size: Dp = 200.dp,
     strokeWidth: Dp = 12.dp
@@ -36,10 +36,12 @@ fun CircularBatteryGauge(
     )
     
     val animatedHealth by animateFloatAsState(
-        targetValue = health.toFloat(),
+        targetValue = (health ?: 100).toFloat(), // Animate to 100 if null for a clean look
         animationSpec = tween(1000),
         label = "health"
     )
+
+    val isHealthAvailable = health != null
 
     Box(contentAlignment = Alignment.Center, modifier = modifier.size(size)) {
         Canvas(modifier = Modifier.size(size)) {
@@ -52,17 +54,19 @@ fun CircularBatteryGauge(
                 style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
             )
 
-            // Health (SoH) Outer Track - Silver/Grayish
-            drawArc(
-                brush = Brush.sweepGradient(
-                    0f to Color(0xFF9E9E9E),
-                    1f to Color(0xFFE0E0E0)
-                ),
-                startAngle = 135f,
-                sweepAngle = (animatedHealth / 100f) * 270f,
-                useCenter = false,
-                style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
-            )
+            // Health (SoH) Outer Track
+            if (isHealthAvailable) {
+                drawArc(
+                    brush = Brush.sweepGradient(
+                        0f to Color(0xFF9E9E9E),
+                        1f to Color(0xFFE0E0E0)
+                    ),
+                    startAngle = 135f,
+                    sweepAngle = (animatedHealth / 100f) * 270f,
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
+                )
+            }
 
             // Background track for Level
             drawArc(
@@ -113,7 +117,7 @@ fun CircularBatteryGauge(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Health: ${health}%",
+                text = if (isHealthAvailable) "Health: ${health}%" else "Health: N/A",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

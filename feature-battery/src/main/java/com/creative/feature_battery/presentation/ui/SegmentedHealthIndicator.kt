@@ -15,11 +15,13 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun SegmentedHealthIndicator(
-    stateOfHealth: Int,
+    stateOfHealth: Int?,
     cycleCount: Int?,
     modifier: Modifier = Modifier,
     segments: Int = 10
 ) {
+    val isAvailable = stateOfHealth != null
+    
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -32,13 +34,17 @@ fun SegmentedHealthIndicator(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "$stateOfHealth%",
+                text = stateOfHealth?.let { "$it%" } ?: "Not Available",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                color = when {
-                    stateOfHealth > 85 -> Color(0xFF4CAF50)
-                    stateOfHealth > 75 -> Color(0xFFFFA000)
-                    else -> Color(0xFFF44336)
+                color = if (isAvailable) {
+                    when {
+                        stateOfHealth!! > 85 -> Color(0xFF4CAF50)
+                        stateOfHealth > 75 -> Color(0xFFFFA000)
+                        else -> Color(0xFFF44336)
+                    }
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 }
             )
         }
@@ -51,13 +57,16 @@ fun SegmentedHealthIndicator(
                 .height(12.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            val activeSegments = (stateOfHealth / (100 / segments.toFloat())).toInt()
+            val activeSegments = if (isAvailable) {
+                (stateOfHealth!! / (100 / segments.toFloat())).toInt()
+            } else 0
             
             for (i in 1..segments) {
                 val color = when {
+                    !isAvailable -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     i <= activeSegments -> {
                         when {
-                            stateOfHealth > 85 -> Color(0xFF4CAF50)
+                            stateOfHealth!! > 85 -> Color(0xFF4CAF50)
                             stateOfHealth > 75 -> Color(0xFFFFA000)
                             else -> Color(0xFFF44336)
                         }
@@ -75,12 +84,12 @@ fun SegmentedHealthIndicator(
             }
         }
 
-        if (cycleCount != null) {
+        if (cycleCount != null || !isAvailable) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Total Charge Cycles: $cycleCount",
+                text = if (isAvailable) "Total Charge Cycles: $cycleCount" else "Detailed health metrics not supported by this device",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         }
     }

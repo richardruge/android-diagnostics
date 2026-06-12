@@ -104,7 +104,7 @@ fun BatteryChartScreen(
                     ) {
                         CircularBatteryGauge(
                             level = latestInfo?.level ?: 0,
-                            health = latestInfo?.stateOfHealth ?: 100,
+                            health = latestInfo?.stateOfHealth,
                             size = 200.dp
                         )
                     }
@@ -482,7 +482,7 @@ private fun RealTimeMetricsSection(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 SegmentedHealthIndicator(
-                    stateOfHealth = info.stateOfHealth ?: 100,
+                    stateOfHealth = info.stateOfHealth,
                     cycleCount = info.cycleCount
                 )
             }
