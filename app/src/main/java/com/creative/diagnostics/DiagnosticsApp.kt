@@ -11,7 +11,9 @@ import com.creative.feature_thermal.di.thermalFeatureModule
 import com.creative.feature_battery.data.history.BatteryHistoryDatabase
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.GlobalContext.startKoin
+import org.koin.core.logger.Level
 import timber.log.Timber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,17 +36,24 @@ class DiagnosticsApp : Application() {
             defaultHandler?.uncaughtException(thread, throwable)
         }
 
-        startKoin {
-            androidContext(this@DiagnosticsApp)
-            modules(
-                systemModule,
-                batterySystemModule,
-                dataModule,
-                batteryFeatureModule,
-                networkFeatureModule,
-                thermalFeatureModule,
-                automationFeatureModule
-            )
+        try {
+            startKoin {
+                // Log Koin events to logcat
+                androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.ERROR)
+                androidContext(this@DiagnosticsApp)
+                modules(
+                    systemModule,
+                    batterySystemModule,
+                    dataModule,
+                    batteryFeatureModule,
+                    networkFeatureModule,
+                    thermalFeatureModule,
+                    automationFeatureModule
+                )
+            }
+            Timber.i("Koin initialized successfully")
+        } catch (e: Exception) {
+            Timber.e(e, "CRITICAL: Koin failed to initialize. Modules or Context might be misconfigured. Stacktrace: ${e.stackTraceToString()}")
         }
 
         checkVersionAndClearData()
@@ -62,9 +71,10 @@ class DiagnosticsApp : Application() {
                 try {
                     val db = get<BatteryHistoryDatabase>()
                     db.clearAllTables()
-                    Timber.i("Database cleared successfully.")
+                    Timber.i("Database cleared successfully during version update.")
                 } catch (e: Exception) {
-                    Timber.e(e, "Failed to clear database during version update")
+                    Timber.e(e, "Koin Dependency Error: Failed to resolve or use BatteryHistoryDatabase. Possible injection failure. Root: ${e.message}")
+                    e.printStackTrace()
                 }
             }
         }

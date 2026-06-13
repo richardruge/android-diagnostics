@@ -42,14 +42,14 @@ fun VoltageChart(
 ) {
     val bottomAxisValueFormatter = remember(minX, maxX) {
         CartesianValueFormatter { _, x, _ ->
-            if (x.isNaN() || maxX == null || minX == null) "" else {
+            if (!x.isFinite() || maxX == null || minX == null || !maxX.isFinite() || !minX.isFinite()) "" else {
                 val rangeMinutes = (maxX - minX) / (60 * 1000)
                 if (rangeMinutes > 90) { // 24h window (1440 mins)
                     val diffHours = (x - maxX) / (3600 * 1000)
-                    "${diffHours.roundToInt()}"
+                    if (diffHours.isFinite()) "${diffHours.roundToInt()}" else ""
                 } else {
                     val diffMinutes = (x - maxX) / (60 * 1000)
-                    "${diffMinutes.roundToInt()}"
+                    if (diffMinutes.isFinite()) "${diffMinutes.roundToInt()}" else ""
                 }
             }
         }
@@ -57,7 +57,7 @@ fun VoltageChart(
     
     val startAxisValueFormatter = remember {
         CartesianValueFormatter { _, y, _ ->
-            if (y.isNaN()) "" else "%.2fV".format(Locale.US, y / 1000f)
+            if (!y.isFinite()) "" else "%.2fV".format(Locale.US, y / 1000f)
         }
     }
 
@@ -98,7 +98,8 @@ fun VoltageChart(
                     return if (fixed == fixedMaxY) fixed - 1.0 else fixed
                 }
                 if (!minY.isFinite()) return 0.0
-                return if (minY == maxY) minY - 100.0 else minY
+                val effectiveMaxY = if (maxY.isFinite()) maxY else minY + 100.0
+                return if (minY == effectiveMaxY) minY - 100.0 else minY
             }
 
             override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
@@ -107,7 +108,8 @@ fun VoltageChart(
                     return if (fixed == fixedMinY) fixed + 1.0 else fixed
                 }
                 if (!maxY.isFinite()) return 5000.0
-                return if (minY == maxY) maxY + 100.0 else maxY
+                val effectiveMinY = if (minY.isFinite()) minY else maxY - 100.0
+                return if (effectiveMinY == maxY) maxY + 100.0 else maxY
             }
         }
     }

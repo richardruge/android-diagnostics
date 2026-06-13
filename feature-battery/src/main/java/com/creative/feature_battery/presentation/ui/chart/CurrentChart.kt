@@ -39,14 +39,14 @@ fun CurrentChart(
 ) {
     val bottomAxisValueFormatter = remember(minX, maxX) {
         CartesianValueFormatter { _, x, _ ->
-            if (x.isNaN() || maxX == null || minX == null) "" else {
+            if (!x.isFinite() || maxX == null || minX == null || !maxX.isFinite() || !minX.isFinite()) "" else {
                 val rangeMinutes = (maxX - minX) / (60 * 1000)
                 if (rangeMinutes > 90) { // 24h window
                     val diffHours = (x - maxX) / (3600 * 1000)
-                    "${diffHours.roundToInt()}h"
+                    if (diffHours.isFinite()) "${diffHours.roundToInt()}h" else ""
                 } else {
                     val diffMinutes = (x - maxX) / (60 * 1000)
-                    "${diffMinutes.roundToInt()}m"
+                    if (diffMinutes.isFinite()) "${diffMinutes.roundToInt()}m" else ""
                 }
             }
         }
@@ -54,7 +54,7 @@ fun CurrentChart(
     
     val startAxisValueFormatter = remember {
         CartesianValueFormatter { _, y, _ ->
-            if (y.isNaN()) "" else "%.0fmA".format(Locale.US, y)
+            if (!y.isFinite()) "" else "%.0fmA".format(Locale.US, y)
         }
     }
 
@@ -71,23 +71,41 @@ fun CurrentChart(
     val rangeProvider = remember(fixedMinX, fixedMaxX, fixedMinY, fixedMaxY) {
         object : CartesianLayerRangeProvider {
             override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                if (fixedMinX != null && fixedMinX.isFinite()) return fixedMinX
-                return if (!minX.isFinite()) 0.0 else minX
+                val fixed = fixedMinX
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMaxX) fixed - 1.0 else fixed
+                }
+                if (!minX.isFinite()) return 0.0
+                return if (minX == maxX) minX - 1.0 else minX
             }
 
             override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                if (fixedMaxX != null && fixedMaxX.isFinite()) return fixedMaxX
-                return if (!maxX.isFinite()) 1.0 else maxX
+                val fixed = fixedMaxX
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMinX) fixed + 1.0 else fixed
+                }
+                if (!maxX.isFinite()) return 1.0
+                return if (minX == maxX) maxX + 1.0 else maxX
             }
 
             override fun getMinY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                if (fixedMinY != null && fixedMinY.isFinite()) return fixedMinY
-                return if (!minY.isFinite()) -1000.0 else minY
+                val fixed = fixedMinY
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMaxY) fixed - 100.0 else fixed
+                }
+                if (!minY.isFinite()) return -1000.0
+                val effectiveMaxY = if (maxY.isFinite()) maxY else minY + 100.0
+                return if (minY == effectiveMaxY) minY - 100.0 else minY
             }
 
             override fun getMaxY(minY: Double, maxY: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                if (fixedMaxY != null && fixedMaxY.isFinite()) return fixedMaxY
-                return if (!maxY.isFinite()) 1000.0 else maxY
+                val fixed = fixedMaxY
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMinY) fixed + 100.0 else fixed
+                }
+                if (!maxY.isFinite()) return 1000.0
+                val effectiveMinY = if (minY.isFinite()) minY else maxY - 100.0
+                return if (effectiveMinY == maxY) maxY + 100.0 else maxY
             }
         }
     }
