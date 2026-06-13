@@ -482,14 +482,16 @@ private fun RealTimeMetricsSection(
         }
 
         // Capacity Retention Card
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                SegmentedHealthIndicator(
-                    stateOfHealth = info.stateOfHealth,
-                    cycleCount = info.cycleCount
-                )
+        if (info.stateOfHealth != null) {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SegmentedHealthIndicator(
+                        stateOfHealth = info.stateOfHealth,
+                        cycleCount = info.cycleCount
+                    )
+                }
             }
         }
 
