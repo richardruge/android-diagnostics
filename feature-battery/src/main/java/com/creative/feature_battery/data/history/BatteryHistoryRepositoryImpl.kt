@@ -56,7 +56,7 @@ fun BatteryHistoryEntity.toDomain() = BatteryInfo(
     chargeRateMah = chargeRateMah,
     health = try {
         BatteryHealthUi.valueOf(health)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         BatteryHealthUi.UNSPECIFIED
     },
     capacityMah = capacityMah,

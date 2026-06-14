@@ -9,7 +9,8 @@ import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
 import com.creative.feature_battery.domain.repository.BatteryRepository
 import com.creative.feature_battery.presentation.BatteryViewModel
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
-import org.koin.androidx.viewmodel.dsl.viewModel
+import com.creative.feature_battery.presentation.ui.debug.BatteryDebugViewModel
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val batteryFeatureModule = module {
@@ -48,7 +49,7 @@ val batteryFeatureModule = module {
     single { BatterySeverityEvaluator() }
 
     // ViewModels
-    viewModel { BatteryViewModel(get(), get()) }
-    viewModel { BatteryChartViewModel(get(), get(), get(), get()) }
-    viewModel { com.creative.feature_battery.presentation.ui.debug.BatteryDebugViewModel(get()) }
+    viewModelOf(::BatteryViewModel)
+    viewModelOf(::BatteryChartViewModel)
+    viewModelOf(::BatteryDebugViewModel)
 }

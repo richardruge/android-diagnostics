@@ -2,7 +2,6 @@ package com.creative.feature_battery.data.history
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
-import com.creative.feature_battery.data.history.BatteryHistoryEntity
 
 @Dao
 interface BatteryHistoryDao {
