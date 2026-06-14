@@ -2,11 +2,14 @@ package com.creative.feature_battery.di
 
 import androidx.room.Room
 import com.creative.feature_battery.data.BatteryRepositoryImpl
+import com.creative.feature_battery.data.BatterySettingsRepositoryImpl
 import com.creative.feature_battery.data.history.BatteryHistoryDatabase
 import com.creative.feature_battery.data.history.BatteryHistoryRepositoryImpl
 import com.creative.feature_battery.domain.BatterySeverityEvaluator
 import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
 import com.creative.feature_battery.domain.repository.BatteryRepository
+import com.creative.feature_battery.domain.repository.BatterySettingsRepository
+import com.creative.feature_battery.presentation.BatterySettingsViewModel
 import com.creative.feature_battery.presentation.BatteryViewModel
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
 import com.creative.feature_battery.presentation.ui.debug.BatteryDebugViewModel
@@ -35,6 +38,7 @@ val batteryFeatureModule = module {
         BatteryHistoryRepositoryImpl(
             dao = get(),
             aggregationDao = get(),
+            settingsRepository = get(),
             maxSize = 10_000
         )
     }
@@ -50,8 +54,12 @@ val batteryFeatureModule = module {
     // Evaluator
     single { BatterySeverityEvaluator() }
 
+    // Settings
+    single<BatterySettingsRepository> { BatterySettingsRepositoryImpl(get()) }
+
     // ViewModels
     viewModelOf(::BatteryViewModel)
+    viewModelOf(::BatterySettingsViewModel)
     viewModelOf(::BatteryChartViewModel)
     viewModelOf(::BatteryDebugViewModel)
 }

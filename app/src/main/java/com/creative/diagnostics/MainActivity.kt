@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.NetworkCheck
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ import androidx.navigation.compose.rememberNavController
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartScreen
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
 import com.creative.feature_battery.presentation.ui.debug.BatteryDebugScreen
+import com.creative.feature_battery.presentation.ui.BatterySettingsScreen
 import com.creative.feature_battery.service.BatteryMonitoringService
 import com.creative.feature_network.presentation.ui.NetworkScreen
 import kotlinx.coroutines.launch
@@ -119,6 +121,7 @@ class MainActivity : ComponentActivity() {
                 "battery_trends" -> "Battery Trends"
                 "battery_debug" -> "Battery Data Debug"
                 "network" -> "Network Diagnostics"
+                "settings" -> "Settings"
                 else -> "Android Diagnostics"
             }
         }
@@ -204,6 +207,11 @@ class MainActivity : ComponentActivity() {
                                 Icon(Icons.Default.Menu, contentDescription = "Menu")
                             }
                         },
+                        actions = {
+                            IconButton(onClick = { navController.navigate("settings") }) {
+                                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            }
+                        },
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.surface,
                         )
@@ -241,6 +249,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("battery_debug") {
                             BatteryDebugScreen()
+                        }
+                        composable("settings") {
+                            BatterySettingsScreen(onBack = { navController.popBackStack() })
                         }
                     }
                 }

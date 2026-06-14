@@ -18,6 +18,9 @@ interface BatteryAggregationDao {
     @Query("SELECT * FROM battery_aggregation ORDER BY timestamp DESC")
     fun getAllAggregations(): List<BatteryAggregationEntity>
 
+    @Query("DELETE FROM battery_aggregation WHERE timestamp < :timestamp")
+    suspend fun deleteOlderThan(timestamp: Long)
+
     @Query("DELETE FROM battery_aggregation")
     suspend fun deleteAll()
 }

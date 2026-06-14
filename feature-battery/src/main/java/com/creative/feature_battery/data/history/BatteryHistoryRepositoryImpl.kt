@@ -4,12 +4,15 @@ import com.creative.feature_battery.domain.model.BatteryInfo
 import com.creative.feature_battery.domain.model.BatteryHealthUi
 import com.creative.feature_battery.domain.repository.BatteryAggregation
 import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
+import com.creative.feature_battery.domain.repository.BatterySettingsRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 class BatteryHistoryRepositoryImpl(
     private val dao: BatteryHistoryDao,
     private val aggregationDao: BatteryAggregationDao,
+    private val settingsRepository: BatterySettingsRepository,
     private val maxSize: Int = 10_000
 ) : BatteryHistoryRepository {
 
@@ -22,10 +25,18 @@ class BatteryHistoryRepositoryImpl(
         // Aggregating every 30 mins keeps the data clean without too many writes
         if (now - lastAggregationTime > 30 * 60 * 1000) {
             aggregateOldData()
+            cleanupOldAggregations()
             lastAggregationTime = now
         }
         
         dao.trimToSize(maxSize)
+    }
+
+    private suspend fun cleanupOldAggregations() {
+        val settings = settingsRepository.getSettings().first()
+        val retentionMillis = settings.retentionMonths * 30L * 24 * 60 * 60 * 1000
+        val cutoff = System.currentTimeMillis() - retentionMillis
+        aggregationDao.deleteOlderThan(cutoff)
     }
 
     private suspend fun aggregateOldData() {
