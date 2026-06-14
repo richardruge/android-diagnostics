@@ -1,6 +1,5 @@
 package com.creative.feature_battery.presentation.ui.chart
 
-import androidx.compose.animation.core.snap
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
