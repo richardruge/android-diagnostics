@@ -7,6 +7,7 @@ import com.creative.feature_battery.domain.repository.BatterySettingsRepository
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import androidx.core.content.edit
 
 class BatterySettingsRepositoryImpl(
     private val context: Context
@@ -33,6 +34,6 @@ class BatterySettingsRepositoryImpl(
     }
 
     override suspend fun updateRetentionPeriod(months: Int) {
-        prefs.edit().putInt(KEY_RETENTION_MONTHS, months).apply()
+        prefs.edit { putInt(KEY_RETENTION_MONTHS, months) }
     }
 }
