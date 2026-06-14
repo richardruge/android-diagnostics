@@ -31,9 +31,11 @@ fun NetworkScreen(viewModel: NetworkViewModel = koinViewModel()) {
             uiState.networkState != null -> NetworkContent(
                 state = uiState.networkState!!,
                 isPingTesting = uiState.isPingTesting,
-                lastPingMs = uiState.lastPingMs,
-                pingHistory = uiState.pingHistory,
-                onRunPingTest = { viewModel.runPingTest() }
+                gatewayPingMs = uiState.gatewayPingMs,
+                dnsPingMs = uiState.dnsPingMs,
+                publicPingMs = uiState.publicPingMs,
+                signalHistory = uiState.signalHistory,
+                onRunPingTest = viewModel::runPingTest,
             )
         }
     }
@@ -57,8 +59,10 @@ private fun ErrorView(message: String) {
 private fun NetworkContent(
     state: NetworkState,
     isPingTesting: Boolean,
-    lastPingMs: Long?,
-    pingHistory: List<Long>,
+    gatewayPingMs: Long?,
+    dnsPingMs: Long?,
+    publicPingMs: Long?,
+    signalHistory: List<Int>,
     onRunPingTest: () -> Unit
 ) {
     Column(
@@ -73,7 +77,16 @@ private fun NetworkContent(
         ConnectionStatusCard(state)
 
         if (state.isConnected) {
-            LatencyTestCard(isPingTesting, lastPingMs, pingHistory, onRunPingTest)
+            MultiHopPingCard(isPingTesting, gatewayPingMs, dnsPingMs, publicPingMs, onRunPingTest)
+
+            if (signalHistory.isNotEmpty()) {
+                Text(
+                    text = "Signal History",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                SignalStrengthChart(history = signalHistory)
+            }
 
             Text(
                 text = "Connection Details",
@@ -130,77 +143,63 @@ private fun ConnectionStatusCard(state: NetworkState) {
 }
 
 @Composable
-private fun LatencyTestCard(
+private fun MultiHopPingCard(
     isTesting: Boolean,
-    lastPingMs: Long?,
-    pingHistory: List<Long>,
+    gatewayPing: Long?,
+    dnsPing: Long?,
+    publicPing: Long?,
     onRun: () -> Unit
 ) {
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Latency (Speed Test)",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    val pingText = when {
-                        isTesting -> "Testing..."
-                        lastPingMs != null -> "$lastPingMs ms"
-                        else -> "-- ms"
-                    }
-                    val pingColor = when {
-                        lastPingMs == null -> MaterialTheme.colorScheme.onSurface
-                        lastPingMs < 50 -> Color(0xFF4CAF50)
-                        lastPingMs < 150 -> Color(0xFFFFC107)
-                        else -> Color(0xFFF44336)
-                    }
-                    
-                    Text(
-                        text = pingText,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (isTesting) MaterialTheme.colorScheme.onSurfaceVariant else pingColor
-                    )
-                    
-                    Text(
-                        text = "8.8.8.8 (Google DNS)",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-
-                if (pingHistory.isNotEmpty()) {
-                    LatencySparkline(
-                        history = pingHistory,
-                        modifier = Modifier
-                            .height(40.dp)
-                            .width(80.dp)
-                            .padding(horizontal = 8.dp),
-                        lineColor = MaterialTheme.colorScheme.primary
-                    )
-                }
-                
-                Button(
-                    onClick = onRun,
-                    enabled = !isTesting
-                ) {
-                    Text(if (isTesting) "Wait" else "Run Test")
+                Text(
+                    text = "Hop-by-Hop Latency",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Button(onClick = onRun, enabled = !isTesting, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+                    Text(if (isTesting) "Wait" else "Test All")
                 }
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            PingRow(label = "Local Gateway (Router)", ms = gatewayPing, isTesting = isTesting)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+            PingRow(label = "DNS Server", ms = dnsPing, isTesting = isTesting)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+            PingRow(label = "Public Internet (8.8.8.8)", ms = publicPing, isTesting = isTesting)
         }
+    }
+}
+
+@Composable
+private fun PingRow(label: String, ms: Long?, isTesting: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodyMedium)
+        val color = when {
+            ms == null -> MaterialTheme.colorScheme.onSurface
+            ms < 30 -> Color(0xFF4CAF50)
+            ms < 100 -> Color(0xFFFFC107)
+            else -> Color(0xFFF44336)
+        }
+        Text(
+            text = if (isTesting && (ms == null)) "..." else if (ms != null) "$ms ms" else "-- ms",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
     }
 }
 
@@ -213,20 +212,32 @@ private fun WifiDetails(state: NetworkState) {
         1 -> "Poor"
         else -> "Very Poor"
     }
+
+    val channel = state.frequencyMhz?.let { freq ->
+        when (freq) {
+            in 2412..2484 -> (freq - 2412) / 5 + 1
+            in 5170..5825 -> (freq - 5170) / 5 + 34
+            else -> null
+        }
+    }
     
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        DetailCard(label = "SSID: ", value = state.ssid ?: "Unknown")
+        DetailCard(label = "SSID", value = state.ssid ?: "Unknown")
+        DetailCard(label = "BSSID", value = state.bssid ?: "Unknown")
         DetailCard(
-            label = "Signal Strength: ", 
+            label = "Signal Strength", 
             value = "${state.signalStrengthDbm} dBm ($signalRating)"
         )
         val frequencyValue = if (state.frequencyMhz != null) {
-            "${state.frequencyMhz} MHz" + (state.wifiStandard?.let { " ($it)" } ?: "")
+            "${state.frequencyMhz} MHz (Ch ${channel ?: "?"})" + (state.wifiStandard?.let { " $it" } ?: "")
         } else {
             "Unknown"
         }
-        DetailCard(label = "Frequency: ", value = frequencyValue)
-        DetailCard(label = "Connection Rate: ", value = "${state.linkSpeedMbps} Mbps")
+        DetailCard(label = "Frequency & Channel", value = frequencyValue)
+        DetailCard(label = "IP Address", value = state.ipAddress ?: "Unknown")
+        DetailCard(label = "Gateway", value = state.gatewayIp ?: "Unknown")
+        DetailCard(label = "DNS Servers", value = state.dnsServers.joinToString(", ").ifEmpty { "Unknown" })
+        DetailCard(label = "Link Speed", value = "${state.linkSpeedMbps} Mbps")
     }
 }
 

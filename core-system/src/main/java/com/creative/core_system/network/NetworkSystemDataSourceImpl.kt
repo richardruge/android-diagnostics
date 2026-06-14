@@ -7,7 +7,7 @@ import android.net.NetworkRequest
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.Build
-import android.telephony.TelephonyManager
+import android.text.format.Formatter
 import com.creative.core_model.NetworkState
 import com.creative.core_model.NetworkType
 import kotlinx.coroutines.Dispatchers
@@ -16,16 +16,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withContext
-import android.util.Log
 import java.net.InetAddress
 
 class NetworkSystemDataSourceImpl(
-    private val context: Context
+    context: Context,
 ) : NetworkSystemDataSource {
 
     private val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     private val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-    private val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
     override fun observeNetworkState(): Flow<NetworkState> = callbackFlow {
         val networkCallback = object : ConnectivityManager.NetworkCallback() {
@@ -63,17 +61,22 @@ class NetworkSystemDataSourceImpl(
         var signalStrength: Int? = null
         var signalLevel = 0
         var ssid: String? = null
+        var bssid: String? = null
         var freq: Int? = null
         var wifiStandard: String? = null
         var linkSpeed: Int? = null
+        var ipAddress: String? = null
+        var gatewayIp: String? = null
+        var dnsServers: List<String> = emptyList()
 
         if (type == NetworkType.WIFI) {
             val wifiInfo = wifiManager.connectionInfo
             signalStrength = wifiInfo.rssi
             signalLevel = WifiManager.calculateSignalLevel(wifiInfo.rssi, 5)
             ssid = wifiInfo.ssid.removeSurrounding("\"")
+            bssid = wifiInfo.bssid
             freq = wifiInfo.frequency
-            
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 wifiStandard = when (wifiInfo.wifiStandard) {
                     ScanResult.WIFI_STANDARD_11BE -> "Wi-Fi 7"
@@ -84,10 +87,21 @@ class NetworkSystemDataSourceImpl(
                     else -> "Unknown"
                 }
             }
-            
+
             linkSpeed = wifiInfo.linkSpeed
-        } else if (type == NetworkType.CELLULAR) {
-            // Signal strength for cellular simplified
+
+            @Suppress("DEPRECATION")
+            val dhcpInfo = wifiManager.dhcpInfo
+            gatewayIp = Formatter.formatIpAddress(dhcpInfo.gateway)
+            ipAddress = Formatter.formatIpAddress(dhcpInfo.ipAddress)
+        }
+
+        activeNetwork?.let { network ->
+            val linkProps = cm.getLinkProperties(network)
+            dnsServers = linkProps?.dnsServers?.mapNotNull { it.hostAddress } ?: emptyList()
+            if ((ipAddress == null) || (ipAddress == "0.0.0.0")) {
+                ipAddress = linkProps?.linkAddresses?.firstOrNull()?.address?.hostAddress
+            }
         }
 
         return NetworkState(
@@ -96,10 +110,13 @@ class NetworkSystemDataSourceImpl(
             signalStrengthDbm = signalStrength,
             signalLevel = signalLevel,
             ssid = ssid,
+            bssid = bssid,
             frequencyMhz = freq,
             wifiStandard = wifiStandard,
             linkSpeedMbps = linkSpeed,
-            ipAddress = null
+            ipAddress = ipAddress,
+            gatewayIp = gatewayIp,
+            dnsServers = dnsServers,
         )
     }
 
@@ -112,7 +129,7 @@ class NetworkSystemDataSourceImpl(
             } else {
                 null
             }
-        } catch (e: Exception) {
+        } catch (ignored: Exception) {
             null
         }
     }
