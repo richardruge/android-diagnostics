@@ -50,4 +50,5 @@ val batteryFeatureModule = module {
     // ViewModels
     viewModel { BatteryViewModel(get(), get()) }
     viewModel { BatteryChartViewModel(get(), get(), get(), get()) }
+    viewModel { com.creative.feature_battery.presentation.ui.debug.BatteryDebugViewModel(get()) }
 }

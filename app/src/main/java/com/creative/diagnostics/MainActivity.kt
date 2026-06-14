@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryFull
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.Timeline
@@ -45,6 +46,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartScreen
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
+import com.creative.feature_battery.presentation.ui.debug.BatteryDebugScreen
 import com.creative.feature_battery.service.BatteryMonitoringService
 import com.creative.feature_network.presentation.ui.NetworkScreen
 import kotlinx.coroutines.launch
@@ -119,6 +121,7 @@ class MainActivity : ComponentActivity() {
             when (currentDestination?.route) {
                 "battery_metrics" -> "Battery Metrics"
                 "battery_trends" -> "Battery Trends"
+                "battery_debug" -> "Battery Data Debug"
                 "network" -> "Network Diagnostics"
                 else -> "Android Diagnostics"
             }
@@ -152,6 +155,22 @@ class MainActivity : ComponentActivity() {
                         onClick = {
                             scope.launch { drawerState.close() }
                             navController.navigate("battery_trends") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.BugReport, contentDescription = null) },
+                        label = { Text("Debug Data") },
+                        selected = currentDestination?.hierarchy?.any { it.route == "battery_debug" } == true,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            navController.navigate("battery_debug") {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -223,6 +242,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("network") {
                             NetworkScreen()
+                        }
+                        composable("battery_debug") {
+                            BatteryDebugScreen()
                         }
                     }
                 }

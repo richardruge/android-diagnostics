@@ -40,4 +40,7 @@ interface BatteryHistoryDao {
         )
     """)
     suspend fun trimToSize(maxSize: Int)
+
+    @Query("DELETE FROM battery_history")
+    suspend fun deleteAll()
 }
