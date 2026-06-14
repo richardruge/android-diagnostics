@@ -9,6 +9,7 @@ interface BatteryHistoryRepository {
     fun observeHistory(since: Long, limit: Int = 2000): Flow<List<BatteryInfo>>
     fun observeHistorySampled(since: Long, samplingRate: Int, limit: Int = 2000): Flow<List<BatteryInfo>>
     fun observeAggregatedHistory(since: Long): Flow<List<BatteryAggregation>>
+    suspend fun runAggregation()
     suspend fun clearHistory()
 }
 

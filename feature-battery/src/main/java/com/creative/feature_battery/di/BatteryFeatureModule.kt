@@ -12,6 +12,7 @@ import com.creative.feature_battery.domain.repository.BatterySettingsRepository
 import com.creative.feature_battery.presentation.BatterySettingsViewModel
 import com.creative.feature_battery.presentation.BatteryViewModel
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
+import com.creative.feature_battery.presentation.ui.chart.BatteryLongTermViewModel
 import com.creative.feature_battery.presentation.ui.debug.BatteryDebugViewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -61,5 +62,6 @@ val batteryFeatureModule = module {
     viewModelOf(::BatteryViewModel)
     viewModelOf(::BatterySettingsViewModel)
     viewModelOf(::BatteryChartViewModel)
+    viewModelOf(::BatteryLongTermViewModel)
     viewModelOf(::BatteryDebugViewModel)
 }

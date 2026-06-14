@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.Settings
@@ -43,6 +44,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartScreen
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
+import com.creative.feature_battery.presentation.ui.chart.BatteryLongTermScreen
 import com.creative.feature_battery.presentation.ui.debug.BatteryDebugScreen
 import com.creative.feature_battery.presentation.ui.BatterySettingsScreen
 import com.creative.feature_battery.service.BatteryMonitoringService
@@ -119,6 +121,7 @@ class MainActivity : ComponentActivity() {
             when (currentDestination?.route) {
                 "battery_metrics" -> "Battery Metrics"
                 "battery_trends" -> "Battery Trends"
+                "battery_long_term" -> "Long-term Trends"
                 "battery_debug" -> "Battery Data Debug"
                 "network" -> "Network Diagnostics"
                 "settings" -> "Settings"
@@ -154,6 +157,22 @@ class MainActivity : ComponentActivity() {
                         onClick = {
                             scope.launch { drawerState.close() }
                             navController.navigate("battery_trends") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.History, contentDescription = null) },
+                        label = { Text("Long-term Trends") },
+                        selected = currentDestination?.hierarchy?.any { it.route == "battery_long_term" } == true,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            navController.navigate("battery_long_term") {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -243,6 +262,9 @@ class MainActivity : ComponentActivity() {
                         composable("battery_trends") {
                             val viewModel: BatteryChartViewModel = koinViewModel()
                             BatteryChartScreen(showTrends = true, viewModel = viewModel)
+                        }
+                        composable("battery_long_term") {
+                            BatteryLongTermScreen()
                         }
                         composable("network") {
                             NetworkScreen()

@@ -24,7 +24,7 @@ class BatteryHistoryRepositoryImpl(
         val now = System.currentTimeMillis()
         // Aggregating every 30 mins keeps the data clean without too many writes
         if (now - lastAggregationTime > 30 * 60 * 1000) {
-            aggregateOldData()
+            runAggregation()
             cleanupOldAggregations()
             lastAggregationTime = now
         }
@@ -39,7 +39,7 @@ class BatteryHistoryRepositoryImpl(
         aggregationDao.deleteOlderThan(cutoff)
     }
 
-    private suspend fun aggregateOldData() {
+    override suspend fun runAggregation() {
         val twentyFourHoursAgo = System.currentTimeMillis() - (24 * 60 * 60 * 1000)
         val bucketMinutes = 60 // 1 hour buckets
         
