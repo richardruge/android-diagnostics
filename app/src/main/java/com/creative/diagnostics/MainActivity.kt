@@ -250,10 +250,6 @@ class MainActivity : ComponentActivity() {
 
     private fun startBatteryService() {
         val intent = Intent(this, BatteryMonitoringService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
+        startForegroundService(intent)
     }
 }
