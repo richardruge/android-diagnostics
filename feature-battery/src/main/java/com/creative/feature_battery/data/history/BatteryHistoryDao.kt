@@ -3,6 +3,14 @@ package com.creative.feature_battery.data.history
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
+data class BatteryHistoryBucket(
+    @ColumnInfo(name = "bucket_timestamp") val timestamp: Long,
+    @ColumnInfo(name = "avg_level") val avgLevel: Float,
+    @ColumnInfo(name = "avg_temp") val avgTemperatureC: Float,
+    @ColumnInfo(name = "avg_voltage") val avgVoltageMv: Float?,
+    @ColumnInfo(name = "avg_current") val avgCurrentMa: Float?
+)
+
 @Dao
 interface BatteryHistoryDao {
 
@@ -29,6 +37,23 @@ interface BatteryHistoryDao {
 
     @Query("SELECT * FROM battery_history ORDER BY timestamp DESC")
     fun observeHistory(): Flow<List<BatteryHistoryEntity>>
+
+    @Query("""
+        SELECT 
+            (timestamp / (60000 * :bucketMinutes)) * (60000 * :bucketMinutes) as bucket_timestamp,
+            AVG(level) as avg_level,
+            AVG(temperatureC) as avg_temp,
+            AVG(voltageMv) as avg_voltage,
+            AVG(currentNowMa) as avg_current
+        FROM battery_history 
+        WHERE timestamp < :olderThan
+        GROUP BY bucket_timestamp
+        ORDER BY bucket_timestamp ASC
+    """)
+    suspend fun getAggregatedHistory(olderThan: Long, bucketMinutes: Int): List<BatteryHistoryBucket>
+
+    @Query("DELETE FROM battery_history WHERE timestamp < :olderThan")
+    suspend fun deleteOlderThan(olderThan: Long)
 
     @Query("""
         DELETE FROM battery_history 

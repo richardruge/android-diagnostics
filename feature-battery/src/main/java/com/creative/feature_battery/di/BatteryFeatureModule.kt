@@ -28,11 +28,13 @@ val batteryFeatureModule = module {
 
     // DAO
     single { get<BatteryHistoryDatabase>().dao() }
+    single { get<BatteryHistoryDatabase>().aggregationDao() }
 
     // History repository
     single<BatteryHistoryRepository> {
         BatteryHistoryRepositoryImpl(
             dao = get(),
+            aggregationDao = get(),
             maxSize = 10_000
         )
     }

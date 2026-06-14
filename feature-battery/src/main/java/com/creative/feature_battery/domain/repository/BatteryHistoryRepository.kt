@@ -8,5 +8,15 @@ interface BatteryHistoryRepository {
     fun observeHistory(): Flow<List<BatteryInfo>>
     fun observeHistory(since: Long, limit: Int = 2000): Flow<List<BatteryInfo>>
     fun observeHistorySampled(since: Long, samplingRate: Int, limit: Int = 2000): Flow<List<BatteryInfo>>
+    fun observeAggregatedHistory(since: Long): Flow<List<BatteryAggregation>>
     suspend fun clearHistory()
 }
+
+data class BatteryAggregation(
+    val timestamp: Long,
+    val avgLevel: Float,
+    val avgTemperatureC: Float,
+    val avgVoltageMv: Float?,
+    val avgCurrentMa: Float?,
+    val bucketDurationMinutes: Int
+)
