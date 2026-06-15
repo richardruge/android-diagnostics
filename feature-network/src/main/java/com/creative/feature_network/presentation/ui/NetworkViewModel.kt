@@ -3,7 +3,6 @@ package com.creative.feature_network.presentation.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creative.core_data.network.NetworkRepository
-import com.creative.core_model.NetworkType
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 

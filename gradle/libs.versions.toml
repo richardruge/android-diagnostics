@@ -16,7 +16,7 @@ runtime = "1.10.1"
 material3 = "1.4.0"
 coreKtxVersion = "1.15.0"
 koin = "4.1.1"
-ksp = "2.3.2"
+ksp = "2.3.9"
 roomCompiler = "2.8.4"
 roomKtx = "2.8.4"
 uiGraphics = "1.10.4"
@@ -74,8 +74,6 @@ timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "tim
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }
 android-library = { id = "com.android.library", version.ref = "android-gradle-plugin" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-
 # Required for Kotlin 2.0.x Compose projects
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
