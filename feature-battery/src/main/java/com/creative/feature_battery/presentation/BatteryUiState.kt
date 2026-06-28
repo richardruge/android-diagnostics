@@ -20,11 +20,18 @@ sealed interface BatteryUiState {
         val stateOfHealth: Int?,
         val currentNowMa: Int?,
         val currentAverageMa: Int?,
-        val chargingRate: ChargingRate
+        val chargingRate: ChargingRate,
+        val foregroundPackageName: String? = null,
+        val hasUsagePermission: Boolean = true
     ) : BatteryUiState
 
     companion object {
-        fun from(info: BatteryInfo, severity: Severity): BatteryUiState {
+        fun from(
+            info: BatteryInfo, 
+            severity: Severity, 
+            foregroundPackageName: String? = null,
+            hasUsagePermission: Boolean = true
+        ): BatteryUiState {
             return Ready(
                 level = info.level,
                 temperatureC = info.temperatureC,
@@ -38,7 +45,9 @@ sealed interface BatteryUiState {
                 stateOfHealth = info.stateOfHealth,
                 currentNowMa = info.currentNowMa,
                 currentAverageMa = info.currentAverageMa,
-                chargingRate = info.chargingRate
+                chargingRate = info.chargingRate,
+                foregroundPackageName = foregroundPackageName,
+                hasUsagePermission = hasUsagePermission
             )
         }
     }

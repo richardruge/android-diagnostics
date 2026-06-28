@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creative.feature_battery.domain.model.ChargingRate
@@ -19,10 +20,43 @@ fun BatteryScreen(
     viewModel: BatteryViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     when (uiState) {
         is BatteryUiState.Loading -> LoadingView()
-        is BatteryUiState.Ready -> BatteryContent(uiState as BatteryUiState.Ready)
+        is BatteryUiState.Ready -> {
+            val readyState = uiState as BatteryUiState.Ready
+            Column {
+                if (!readyState.hasUsagePermission) {
+                    PermissionWarning(onGrant = { viewModel.requestUsagePermission(context) })
+                }
+                BatteryContent(readyState)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermissionWarning(onGrant: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.errorContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Usage Access permission is required for app tracking.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.weight(1f)
+            )
+            Button(onClick = onGrant) {
+                Text("Grant")
+            }
+        }
     }
 }
 
@@ -55,6 +89,7 @@ private fun BatteryContent(state: BatteryUiState.Ready) {
         InfoCard(label = "Health", value = state.health)
         InfoCard(label = "Temperature", value = "${state.temperatureC}°C")
         InfoCard(label = "Charging", value = if (state.isCharging) "Yes" else "No")
+        InfoCard(label = "Foreground App", value = state.foregroundPackageName ?: "Unknown/System")
         
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         

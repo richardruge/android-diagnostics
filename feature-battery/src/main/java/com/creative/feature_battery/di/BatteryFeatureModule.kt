@@ -14,6 +14,8 @@ import com.creative.feature_battery.presentation.BatteryViewModel
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
 import com.creative.feature_battery.presentation.ui.chart.BatteryLongTermViewModel
 import com.creative.feature_battery.presentation.ui.debug.BatteryDebugViewModel
+import com.creative.feature_battery.usage.ForegroundSessionManager
+import com.creative.feature_battery.usage.UsagePermissionHelper
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -51,6 +53,10 @@ val batteryFeatureModule = module {
             historyRepository = get()
         ) 
     }
+
+    // Usage Tracking
+    single(createdAtStart = true) { ForegroundSessionManager(get(), get()) }
+    single { UsagePermissionHelper(get()) }
 
     // Evaluator
     single { BatterySeverityEvaluator() }
