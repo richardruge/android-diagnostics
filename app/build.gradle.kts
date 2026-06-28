@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.creative.diagnostics"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.creative.diagnostics"
@@ -48,10 +48,10 @@ java {
 dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
-    implementation("androidx.work:work-runtime-ktx:2.10.0")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("androidx.work:work-runtime-ktx:2.11.2")
+    implementation("androidx.room:room-ktx:2.8.4")
+    ksp("androidx.room:room-compiler:2.8.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation("com.github.PhilJay:MPAndroidChart:3.1.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

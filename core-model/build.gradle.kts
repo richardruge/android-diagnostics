@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "com.creative.core_model"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 29
@@ -24,4 +24,7 @@ java {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }

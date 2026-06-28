@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "com.creative.core_system"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 29
@@ -42,7 +42,7 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

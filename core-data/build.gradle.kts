@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.creative.core_data"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 29
@@ -42,8 +42,8 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     implementation(projects.coreModel)
     implementation(projects.coreSystem)
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-ktx:2.8.4")
+    ksp("androidx.room:room-compiler:2.8.4")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
