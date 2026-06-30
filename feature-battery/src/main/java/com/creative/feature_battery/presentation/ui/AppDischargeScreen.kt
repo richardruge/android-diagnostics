@@ -49,38 +49,6 @@ fun AppDischargeScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Live Tracking Status
-        Card(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            )
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text(
-                        text = "Now Tracking",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = uiState.currentApp ?: "Searching...",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
@@ -198,12 +166,18 @@ private fun AppSessionCard(session: AppDischargeUiModel) {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "%.2f mAh".format(session.totalMah),
+                        text = "%.1f%%".format(session.totalPercentage),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
                 }
+
+                Text(
+                    text = "%.1f%% / hr".format(session.drainRatePercentPerHour),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
