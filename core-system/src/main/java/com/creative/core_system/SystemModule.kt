@@ -21,9 +21,7 @@ val systemModule = module {
         NetworkSystemDataSourceImpl(get())
     }
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        single<ThermalSystemDataSource> {
-            ThermalSystemDataSourceImpl(get())
-        }
+    single<ThermalSystemDataSource> {
+        ThermalSystemDataSourceImpl(get())
     }
 }

@@ -11,7 +11,8 @@ android {
     defaultConfig {
         applicationId = "com.creative.diagnostics"
         minSdk = 29
-        targetSdk = 36
+        //noinspection OldTargetApi
+        targetSdk = 35
         versionCode = 2
         versionName = "1.1"
 
@@ -48,11 +49,11 @@ java {
 dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
-    implementation("androidx.work:work-runtime-ktx:2.11.2")
-    implementation("androidx.room:room-ktx:2.8.4")
-    ksp("androidx.room:room-compiler:2.8.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
-    implementation("com.github.PhilJay:MPAndroidChart:3.1.0")
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.mp.android.chart)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

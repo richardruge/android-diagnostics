@@ -18,6 +18,7 @@ import timber.log.Timber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import androidx.core.content.edit
 
 class DiagnosticsApp : Application() {
     override fun onCreate() {
@@ -79,6 +80,6 @@ class DiagnosticsApp : Application() {
             }
         }
         
-        prefs.edit().putInt("last_app_version", currentVersion).apply()
+        prefs.edit { putInt("last_app_version", currentVersion) }
     }
 }

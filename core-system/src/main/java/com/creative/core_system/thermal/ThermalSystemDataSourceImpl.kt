@@ -8,7 +8,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 
-@RequiresApi(Build.VERSION_CODES.Q)
 class ThermalSystemDataSourceImpl(
     private val context: Context
 ) : ThermalSystemDataSource {

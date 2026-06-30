@@ -20,7 +20,14 @@ class AutomationRepositoryImpl(
         )
     }
 
-    override suspend fun runAutomation(): AutomationResult {
-        TODO("Not yet implemented")
+    override suspend fun runAutomation(taskId: String): AutomationResult {
+        val success = system.runAutomationTask(taskId)
+        return AutomationResult(
+            success = success,
+            message = if (success) "Task $taskId completed successfully" else "Task $taskId failed",
+            levelPercent = 100f,
+            health = AutomationHealth.GOOD,
+            isCharging = false
+        )
     }
 }

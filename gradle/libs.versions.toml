@@ -1,5 +1,4 @@
 [versions]
-agp = "9.0.0"
 coreKtx = "1.19.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -14,18 +13,18 @@ material = "1.14.0"
 hilt = "2.60"
 runtime = "1.11.3"
 material3 = "1.4.0"
-coreKtxVersion = "1.19.0"
 koin = "4.2.2"
 ksp = "2.3.9"
 roomCompiler = "2.8.4"
 roomKtx = "2.8.4"
-uiGraphics = "1.11.3"
+work = "2.11.2"
+coroutines = "1.11.0"
+mpAndroidChart = "3.1.0"
 vico = "2.5.2"
 timber = "5.0.1"
 navigationCompose = "2.9.8"
 
 [libraries]
-
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -46,56 +45,20 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtxVersion" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
-androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+androidx-work-runtime = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+mp-android-chart = { group = "com.github.PhilJay", name = "MPAndroidChart", version.ref = "mpAndroidChart" }
 
 vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
 vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
-
-[libraries.activity-compose]
-group = "androidx.activity"
-name = "activity-compose"
-version = "1.13.0"
-
-[libraries.compose-animation]
-group = "androidx.compose.animation"
-name = "animation"
-
-[libraries.compose-foundation]
-group = "androidx.compose.foundation"
-name = "foundation"
-
-[libraries.compose-runtime]
-group = "androidx.compose.runtime"
-name = "runtime"
-
-[libraries.compose-material3]
-group = "androidx.compose.material3"
-name = "material3"
-
-[libraries.compose-ui-tooling-preview]
-group = "androidx.compose.ui"
-name = "ui-tooling-preview"
-
-[libraries.compose-ui-tooling]
-group = "androidx.compose.ui"
-name = "ui-tooling"
-
-[libraries.compose-ui]
-group = "androidx.compose.ui"
-name = "ui"
-
-[libraries.compose-bom]
-group = "androidx.compose"
-name = "compose-bom"
-version.ref = "compose-bom"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }
