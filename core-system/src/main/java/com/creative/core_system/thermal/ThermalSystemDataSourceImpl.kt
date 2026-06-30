@@ -1,9 +1,7 @@
 package com.creative.core_system.thermal
 
 import android.content.Context
-import android.os.Build
 import android.os.PowerManager
-import androidx.annotation.RequiresApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow

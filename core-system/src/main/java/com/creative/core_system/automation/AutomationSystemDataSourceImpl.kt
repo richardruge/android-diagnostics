@@ -1,12 +1,13 @@
 package com.creative.core_system.automation
 
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 class AutomationSystemDataSourceImpl : AutomationSystemDataSource {
 
     override suspend fun runAutomationTask(taskId: String): Boolean {
         // Simulate actual processing time
-        delay(2000)
+        delay(2000.milliseconds)
 
         return when (taskId) {
             "battery_optimize" -> true

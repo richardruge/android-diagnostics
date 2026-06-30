@@ -20,6 +20,7 @@ roomKtx = "2.8.4"
 work = "2.11.2"
 coroutines = "1.11.0"
 mpAndroidChart = "3.1.0"
+#noinspection NewerVersionAvailable
 vico = "2.5.2"
 timber = "5.0.1"
 navigationCompose = "2.9.8"

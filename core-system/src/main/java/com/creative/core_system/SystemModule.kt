@@ -1,6 +1,5 @@
 package com.creative.core_system
 
-import android.os.Build
 import com.creative.core_system.battery.*
 import com.creative.core_system.network.*
 import com.creative.core_system.thermal.*
