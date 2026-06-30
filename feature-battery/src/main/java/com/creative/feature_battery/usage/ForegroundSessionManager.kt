@@ -1,6 +1,10 @@
 package com.creative.feature_battery.usage
 
+import android.content.Context
 import com.creative.core_model.ForegroundSession
+import com.creative.feature_battery.data.history.AppUsageDao
+import com.creative.feature_battery.data.history.toDomain
+import com.creative.feature_battery.data.history.toEntity
 import com.creative.core_system.usage.UsageSystemDataSource
 import com.creative.feature_battery.domain.repository.BatteryRepository
 import com.creative.feature_battery.domain.repository.BatterySettingsRepository
@@ -16,7 +20,9 @@ import timber.log.Timber
 class ForegroundSessionManager(
     private val usageDataSource: UsageSystemDataSource,
     private val batteryRepository: BatteryRepository,
-    private val settingsRepository: BatterySettingsRepository
+    private val settingsRepository: BatterySettingsRepository,
+    private val usageDao: AppUsageDao,
+    private val context: Context
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val mutex = Mutex()
@@ -28,8 +34,9 @@ class ForegroundSessionManager(
     private val _completedSessions = MutableSharedFlow<ForegroundSession>(extraBufferCapacity = 10)
     val completedSessions: SharedFlow<ForegroundSession> = _completedSessions.asSharedFlow()
 
-    private val _sessionHistory = MutableStateFlow<List<ForegroundSession>>(emptyList())
-    val sessionHistory: StateFlow<List<ForegroundSession>> = _sessionHistory.asStateFlow()
+    val sessionHistory: StateFlow<List<ForegroundSession>> = usageDao.observeAllUsage()
+        .map { entities -> entities.map { it.toDomain() } }
+        .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     private val _currentPackage = MutableStateFlow<String?>(null)
     val currentPackage: StateFlow<String?> = _currentPackage.asStateFlow()
@@ -67,6 +74,16 @@ class ForegroundSessionManager(
 
     private fun isSystemPackage(packageName: String?): Boolean {
         if (packageName == null) return false
+        
+        // Heuristic: If it has a launcher intent, it's likely a user-facing app, 
+        // even if it's a system app or has a com.android prefix.
+        try {
+            val intent = context.packageManager.getLaunchIntentForPackage(packageName)
+            if (intent != null) return false
+        } catch (e: Exception) {
+            // Fallback to prefix check if PM fails
+        }
+
         return packageName == "android" ||
                 packageName.startsWith("com.android.") ||
                 packageName.startsWith("com.google.android.")
@@ -84,7 +101,8 @@ class ForegroundSessionManager(
                     if (session != null) {
                         Timber.d("Completed session for ${session.packageName}: ${session.totalMah} mAh")
                         _completedSessions.emit(session)
-                        _sessionHistory.update { (listOf(session) + it).take(50) }
+                        usageDao.insert(session.toEntity())
+                        cleanupOldSessions()
                     }
                 }
 
@@ -97,6 +115,17 @@ class ForegroundSessionManager(
                     _currentSession.value = null
                 }
             }
+        }
+    }
+
+    private suspend fun cleanupOldSessions() {
+        try {
+            val settings = settingsRepository.getSettings().first()
+            val retentionMillis = settings.retentionMonths * 30L * 24 * 60 * 60 * 1000
+            val cutoff = System.currentTimeMillis() - retentionMillis
+            usageDao.deleteOlderThan(cutoff)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to cleanup old sessions")
         }
     }
 

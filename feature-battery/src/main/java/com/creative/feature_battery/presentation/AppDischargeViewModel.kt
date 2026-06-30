@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.creative.core_model.ForegroundSession
 import com.creative.feature_battery.usage.ForegroundSessionManager
 import com.creative.feature_battery.usage.UsagePermissionHelper
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,8 +41,36 @@ class AppDischargeViewModel(
         sessionManager.currentPackage,
         MutableStateFlow(permissionHelper.checkPermission())
     ) { history, current, _ ->
+        val aggregatedSessions = history.groupBy { it.packageName }
+            .map { (packageName, sessions) ->
+                val totalMah = sessions.sumOf { it.totalMah }
+                val totalDurationMs = sessions.sumOf { it.endTime - it.startTime }
+                val avgMa = if (totalDurationMs > 0) {
+                    totalMah / (totalDurationMs / 3600000.0)
+                } else {
+                    0.0
+                }
+
+                val appName = getAppName(packageName)
+                val icon = try {
+                    packageManager.getApplicationIcon(packageName)
+                } catch (e: Exception) {
+                    null
+                }
+
+                AppDischargeUiModel(
+                    packageName = packageName,
+                    name = appName,
+                    icon = icon,
+                    totalMah = totalMah,
+                    avgMa = avgMa,
+                    durationMs = totalDurationMs
+                )
+            }
+            .sortedByDescending { it.totalMah }
+
         AppDischargeUiState(
-            sessions = history.map { it.toUiModel() },
+            sessions = aggregatedSessions,
             currentApp = current?.let { getAppName(it) },
             hasPermission = permissionHelper.checkPermission()
         )
@@ -63,25 +90,6 @@ class AppDischargeViewModel(
             Timber.w("Failed to resolve label for $packageName: ${e.message}")
             packageName
         }
-    }
-
-    private fun ForegroundSession.toUiModel(): AppDischargeUiModel {
-        val appName = getAppName(packageName)
-
-        val icon = try {
-            packageManager.getApplicationIcon(packageName)
-        } catch (e: Exception) {
-            null
-        }
-
-        return AppDischargeUiModel(
-            packageName = packageName,
-            name = appName,
-            icon = icon,
-            totalMah = totalMah,
-            avgMa = avgMa,
-            durationMs = endTime - startTime
-        )
     }
 
     fun requestPermission(context: Context) {

@@ -6,12 +6,14 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [
         BatteryHistoryEntity::class,
-        BatteryAggregationEntity::class
+        BatteryAggregationEntity::class,
+        AppUsageEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class BatteryHistoryDatabase : RoomDatabase() {
     abstract fun dao(): BatteryHistoryDao
     abstract fun aggregationDao(): BatteryAggregationDao
+    abstract fun usageDao(): AppUsageDao
 }

@@ -36,6 +36,7 @@ val batteryFeatureModule = module {
     // DAO
     single { get<BatteryHistoryDatabase>().dao() }
     single { get<BatteryHistoryDatabase>().aggregationDao() }
+    single { get<BatteryHistoryDatabase>().usageDao() }
 
     // History repository
     single<BatteryHistoryRepository> {
@@ -56,7 +57,7 @@ val batteryFeatureModule = module {
     }
 
     // Usage Tracking
-    single(createdAtStart = true) { ForegroundSessionManager(get(), get(), get()) }
+    single(createdAtStart = true) { ForegroundSessionManager(get(), get(), get(), get(), get()) }
     single { UsagePermissionHelper(get()) }
 
     // Evaluator
