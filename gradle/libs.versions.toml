@@ -25,19 +25,7 @@ timber = "5.0.1"
 navigationCompose = "2.9.8"
 
 [libraries]
-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
 
-compose-ui = { group = "androidx.compose.ui", name = "ui" }
-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-
-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
-
-compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
-compose-animation = { group = "androidx.compose.animation", name = "animation" }
-
-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.13.0" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -70,6 +58,44 @@ vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = 
 vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+
+[libraries.activity-compose]
+group = "androidx.activity"
+name = "activity-compose"
+version = "1.13.0"
+
+[libraries.compose-animation]
+group = "androidx.compose.animation"
+name = "animation"
+
+[libraries.compose-foundation]
+group = "androidx.compose.foundation"
+name = "foundation"
+
+[libraries.compose-runtime]
+group = "androidx.compose.runtime"
+name = "runtime"
+
+[libraries.compose-material3]
+group = "androidx.compose.material3"
+name = "material3"
+
+[libraries.compose-ui-tooling-preview]
+group = "androidx.compose.ui"
+name = "ui-tooling-preview"
+
+[libraries.compose-ui-tooling]
+group = "androidx.compose.ui"
+name = "ui-tooling"
+
+[libraries.compose-ui]
+group = "androidx.compose.ui"
+name = "ui"
+
+[libraries.compose-bom]
+group = "androidx.compose"
+name = "compose-bom"
+version.ref = "compose-bom"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }

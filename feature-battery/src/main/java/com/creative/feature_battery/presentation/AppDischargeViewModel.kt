@@ -36,7 +36,7 @@ class AppDischargeViewModel(
     private val sessionManager: ForegroundSessionManager,
     private val batteryRepository: BatteryRepository,
     private val permissionHelper: UsagePermissionHelper,
-    private val context: Context
+    context: Context
 ) : ViewModel() {
 
     private val packageManager = context.packageManager
@@ -61,7 +61,7 @@ class AppDischargeViewModel(
                     val appName = getAppName(packageName)
                     val icon = try {
                         packageManager.getApplicationIcon(packageName)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
 
