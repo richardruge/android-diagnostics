@@ -31,6 +31,8 @@ class BatteryLongTermViewModel(
 
     val avgLevelModelProducer = CartesianChartModelProducer()
     val avgTempModelProducer = CartesianChartModelProducer()
+    val avgVoltageModelProducer = CartesianChartModelProducer()
+    val avgCurrentModelProducer = CartesianChartModelProducer()
 
     val uiState: StateFlow<LongTermChartUiState> = _selectedWindow.flatMapLatest { window ->
         val since = if (window.days > 0) {
@@ -64,6 +66,22 @@ class BatteryLongTermViewModel(
                             series(
                                 state.aggregations.map { it.timestamp.toDouble() },
                                 state.aggregations.map { it.avgTemperatureC.toDouble() }
+                            )
+                        }
+                    }
+                    avgVoltageModelProducer.runTransaction {
+                        lineSeries {
+                            series(
+                                state.aggregations.map { it.timestamp.toDouble() },
+                                state.aggregations.map { it.avgVoltageMv?.toDouble() ?: 0.0 }
+                            )
+                        }
+                    }
+                    avgCurrentModelProducer.runTransaction {
+                        lineSeries {
+                            series(
+                                state.aggregations.map { it.timestamp.toDouble() },
+                                state.aggregations.map { it.avgCurrentMa?.toDouble() ?: 0.0 }
                             )
                         }
                     }

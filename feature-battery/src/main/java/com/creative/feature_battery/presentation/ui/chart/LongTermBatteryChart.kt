@@ -31,7 +31,8 @@ fun LongTermBatteryChart(
     modelProducer: CartesianChartModelProducer,
     modifier: Modifier = Modifier,
     lineColor: Color = MaterialTheme.colorScheme.primary,
-    valueSuffix: String = ""
+    valueSuffix: String = "",
+    isVoltage: Boolean = false
 ) {
     val dateFormat = remember { SimpleDateFormat("MM/dd", Locale.getDefault()) }
     
@@ -43,7 +44,10 @@ fun LongTermBatteryChart(
     
     val startAxisValueFormatter = remember {
         CartesianValueFormatter { _, y, _ ->
-            if (!y.isFinite()) "" else "${y.toInt()}$valueSuffix"
+            if (!y.isFinite()) "" else {
+                if (isVoltage) "%.2fV".format(Locale.US, y / 1000f)
+                else "${y.toInt()}$valueSuffix"
+            }
         }
     }
 

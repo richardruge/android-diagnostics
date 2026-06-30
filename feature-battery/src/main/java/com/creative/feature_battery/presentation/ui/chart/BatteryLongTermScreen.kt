@@ -81,6 +81,37 @@ fun BatteryLongTermScreen(
                     )
                 }
             }
+
+            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Average Voltage (V)",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    LongTermBatteryChart(
+                        modelProducer = viewModel.avgVoltageModelProducer,
+                        lineColor = Color(0xFF2196F3),
+                        valueSuffix = "V",
+                        isVoltage = true
+                    )
+                }
+            }
+
+            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Average Current (mA)",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    LongTermBatteryChart(
+                        modelProducer = viewModel.avgCurrentModelProducer,
+                        lineColor = Color(0xFFFF9800),
+                        valueSuffix = "mA"
+                    )
+                }
+            }
             
             Text(
                 text = "Aggregated data is collected every 30 minutes and kept based on your settings.",

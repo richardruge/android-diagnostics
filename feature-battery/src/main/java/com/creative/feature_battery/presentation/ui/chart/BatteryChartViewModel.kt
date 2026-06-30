@@ -162,34 +162,39 @@ class BatteryChartViewModel(
     private fun seedMockData() {
         viewModelScope.launch(Dispatchers.IO) {
             val now = System.currentTimeMillis()
-            val twentyFourHoursAgo = now - (24 * 60 * 60 * 1000)
+            // Seed 7 days of data to ensure both raw history and aggregated trends are populated
+            val startTime = now - (7L * 24 * 60 * 60 * 1000)
 
-            val interval = 1 * 60 * 1000
-            var currentTimestamp = twentyFourHoursAgo
+            val interval = 15 * 60 * 1000 // 15 minute intervals for faster seeding
+            var currentTimestamp = startTime
 
             while (currentTimestamp <= now) {
-                val hoursSinceStart = (currentTimestamp - twentyFourHoursAgo) / (1000.0 * 60 * 60)
-                val level = if (hoursSinceStart < 16) {
-                    (100 - (hoursSinceStart * 5)).toInt().coerceIn(0, 100)
+                val hoursSinceStart = (currentTimestamp - startTime) / (1000.0 * 60 * 60)
+                val dayOffset = (hoursSinceStart / 24).toInt()
+                val hourOfDay = hoursSinceStart % 24
+                
+                // Simulate daily cycles
+                val level = if (hourOfDay < 16) {
+                    (100 - (hourOfDay * 5)).toInt().coerceIn(0, 100)
                 } else {
-                    (20 + ((hoursSinceStart - 16) * 10)).toInt().coerceIn(0, 100)
+                    (20 + ((hourOfDay - 16) * 10)).toInt().coerceIn(0, 100)
                 }
 
-                val temp = 33f + 5f * sin(hoursSinceStart * 0.5).toFloat()
+                val temp = 30f + 5f * sin(hoursSinceStart * 0.5).toFloat()
 
                 val info = BatteryInfo(
                     level = level,
                     temperatureC = temp,
-                    isCharging = hoursSinceStart >= 16,
-                    chargeRateMah = if (hoursSinceStart >= 16) 1500 else null,
+                    isCharging = hourOfDay >= 16,
+                    chargeRateMah = if (hourOfDay >= 16) 1500 else null,
                     health = BatteryHealthUi.GOOD,
                     capacityMah = 5000,
                     voltageMv = 3800 + (level * 4),
                     technology = "Li-ion",
-                    cycleCount = 150,
+                    cycleCount = 150 + dayOffset,
                     stateOfHealth = 98,
-                    currentNowMa = if (hoursSinceStart >= 16) 1500 else -300,
-                    currentAverageMa = if (hoursSinceStart >= 16) 1400 else -280,
+                    currentNowMa = if (hourOfDay >= 16) 1500 else -300,
+                    currentAverageMa = if (hourOfDay >= 16) 1400 else -280,
                     maxChargingCurrentUa = 3000000,
                     maxChargingVoltageMv = 5000,
                     timestamp = currentTimestamp
@@ -198,6 +203,9 @@ class BatteryChartViewModel(
                 historyRepository.record(info)
                 currentTimestamp += interval
             }
+            
+            // Explicitly trigger aggregation after seeding to populate the long-term trends immediately
+            historyRepository.runAggregation()
         }
     }
 }
