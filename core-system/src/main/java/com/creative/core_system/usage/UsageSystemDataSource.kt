@@ -1,6 +1,7 @@
 package com.creative.core_system.usage
 
 import android.app.AppOpsManager
+import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
@@ -27,18 +28,45 @@ class UsageSystemDataSourceImpl(
     override fun getForegroundAppFlow(pollIntervalMs: Long): Flow<String?> = flow {
         while (true) {
             emit(getForegroundPackageName())
-            delay(pollIntervalMs)
+            delay(500)
         }
     }.distinctUntilChanged()
 
     private fun getForegroundPackageName(): String? {
         val time = System.currentTimeMillis()
-        val stats = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY,
-            time - 1000 * 60,
-            time
-        )
-        return stats?.maxByOrNull { it.lastTimeUsed }?.packageName
+        
+        // 1. Try UsageEvents for real-time accuracy
+        val usageEvents = try {
+            usageStatsManager.queryEvents(time - 1000 * 60, time)
+        } catch (e: Exception) {
+            null
+        }
+        
+        if (usageEvents != null) {
+            val event = UsageEvents.Event()
+            var lastForegroundApp: String? = null
+            while (usageEvents.hasNextEvent()) {
+                usageEvents.getNextEvent(event)
+                if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                    lastForegroundApp = event.packageName
+                }
+            }
+            if (lastForegroundApp != null) return lastForegroundApp
+        }
+
+        // 2. Fallback to queryUsageStats
+        val stats = try {
+            usageStatsManager.queryUsageStats(
+                UsageStatsManager.INTERVAL_DAILY,
+                time - 1000 * 60,
+                time
+            )
+        } catch (e: Exception) {
+            null
+        }
+        
+        return stats?.filter { it.lastTimeUsed > 0 }
+            ?.maxByOrNull { it.lastTimeUsed }?.packageName
     }
 
     override fun hasUsageStatsPermission(): Boolean {

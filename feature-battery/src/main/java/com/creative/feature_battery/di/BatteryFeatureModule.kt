@@ -11,6 +11,7 @@ import com.creative.feature_battery.domain.repository.BatteryRepository
 import com.creative.feature_battery.domain.repository.BatterySettingsRepository
 import com.creative.feature_battery.presentation.BatterySettingsViewModel
 import com.creative.feature_battery.presentation.BatteryViewModel
+import com.creative.feature_battery.presentation.AppDischargeViewModel
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
 import com.creative.feature_battery.presentation.ui.chart.BatteryLongTermViewModel
 import com.creative.feature_battery.presentation.ui.debug.BatteryDebugViewModel
@@ -55,7 +56,7 @@ val batteryFeatureModule = module {
     }
 
     // Usage Tracking
-    single(createdAtStart = true) { ForegroundSessionManager(get(), get()) }
+    single(createdAtStart = true) { ForegroundSessionManager(get(), get(), get()) }
     single { UsagePermissionHelper(get()) }
 
     // Evaluator
@@ -66,6 +67,7 @@ val batteryFeatureModule = module {
 
     // ViewModels
     viewModelOf(::BatteryViewModel)
+    viewModelOf(::AppDischargeViewModel)
     viewModelOf(::BatterySettingsViewModel)
     viewModelOf(::BatteryChartViewModel)
     viewModelOf(::BatteryLongTermViewModel)

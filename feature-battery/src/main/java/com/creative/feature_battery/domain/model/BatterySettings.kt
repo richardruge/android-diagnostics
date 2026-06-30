@@ -1,5 +1,6 @@
 package com.creative.feature_battery.domain.model
 
 data class BatterySettings(
-    val retentionMonths: Int = 6
+    val retentionMonths: Int = 6,
+    val ignoreSystemProcesses: Boolean = true
 )

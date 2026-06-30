@@ -83,6 +83,29 @@ fun BatterySettingsScreen(
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary
             )
+
+            HorizontalDivider()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Ignore System Processes",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "Exclude Android system processes and pre-installed apps from power impact tracking.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Switch(
+                    checked = uiState.ignoreSystemProcesses,
+                    onCheckedChange = { viewModel.updateIgnoreSystemProcesses(it) }
+                )
+            }
         }
     }
 }

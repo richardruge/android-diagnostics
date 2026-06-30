@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -47,6 +48,7 @@ import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
 import com.creative.feature_battery.presentation.ui.chart.BatteryLongTermScreen
 import com.creative.feature_battery.presentation.ui.debug.BatteryDebugScreen
 import com.creative.feature_battery.presentation.ui.BatterySettingsScreen
+import com.creative.feature_battery.presentation.ui.AppDischargeScreen
 import com.creative.feature_battery.service.BatteryMonitoringService
 import com.creative.feature_network.presentation.ui.NetworkScreen
 import kotlinx.coroutines.launch
@@ -122,6 +124,7 @@ class MainActivity : ComponentActivity() {
                 "battery_metrics" -> "Battery Metrics"
                 "battery_trends" -> "Battery Trends"
                 "battery_long_term" -> "Long-term Trends"
+                "app_discharge" -> "App Power Impact"
                 "battery_debug" -> "Battery Data Debug"
                 "network" -> "Network Diagnostics"
                 "settings" -> "Settings"
@@ -173,6 +176,22 @@ class MainActivity : ComponentActivity() {
                         onClick = {
                             scope.launch { drawerState.close() }
                             navController.navigate("battery_long_term") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Bolt, contentDescription = null) },
+                        label = { Text("App Power Impact") },
+                        selected = currentDestination?.hierarchy?.any { it.route == "app_discharge" } == true,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            navController.navigate("app_discharge") {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -265,6 +284,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("battery_long_term") {
                             BatteryLongTermScreen()
+                        }
+                        composable("app_discharge") {
+                            AppDischargeScreen()
                         }
                         composable("network") {
                             NetworkScreen()

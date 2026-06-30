@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 
 data class BatterySettingsUiState(
     val retentionMonths: Int = 6,
+    val ignoreSystemProcesses: Boolean = true,
     val estimatedStorageKb: Double = 0.0
 )
 
@@ -19,6 +20,7 @@ class BatterySettingsViewModel(
         .map { settings ->
             BatterySettingsUiState(
                 retentionMonths = settings.retentionMonths,
+                ignoreSystemProcesses = settings.ignoreSystemProcesses,
                 estimatedStorageKb = calculateStorageEstimate(settings.retentionMonths)
             )
         }
@@ -31,6 +33,12 @@ class BatterySettingsViewModel(
     fun updateRetentionPeriod(months: Int) {
         viewModelScope.launch {
             settingsRepository.updateRetentionPeriod(months)
+        }
+    }
+
+    fun updateIgnoreSystemProcesses(ignore: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateIgnoreSystemProcesses(ignore)
         }
     }
 
