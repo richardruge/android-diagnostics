@@ -53,7 +53,10 @@ fun BatteryDebugScreen(
                 )
             }
             Row {
-                IconButton(onClick = { viewModel.seedMockData() }) {
+                IconButton(onClick = { 
+                    if (selectedTab == 0) viewModel.seedMockData() 
+                    else viewModel.seedMockAggregations()
+                }) {
                     Icon(Icons.Default.Refresh, contentDescription = "Seed Mock Data")
                 }
                 IconButton(onClick = { viewModel.clearHistory() }) {

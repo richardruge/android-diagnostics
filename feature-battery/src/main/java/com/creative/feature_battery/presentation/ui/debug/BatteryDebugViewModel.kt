@@ -37,16 +37,48 @@ class BatteryDebugViewModel(
         }
     }
 
+    fun seedMockAggregations() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            val startTime = now - (30L * 24 * 60 * 60 * 1000)
+            val bucketMinutes = 60
+            val interval = bucketMinutes * 60 * 1000L
+            
+            val aggregations = mutableListOf<BatteryAggregation>()
+            var currentTimestamp = startTime
+
+            while (currentTimestamp <= now) {
+                val hoursSinceStart = (currentTimestamp - startTime) / (1000.0 * 60 * 60)
+                val level = (60 + 40 * sin(hoursSinceStart * 0.2)).toFloat().coerceIn(0f, 100f)
+                val temp = 30f + 5f * sin(hoursSinceStart * 0.5).toFloat()
+
+                aggregations.add(
+                    BatteryAggregation(
+                        timestamp = currentTimestamp,
+                        avgLevel = level,
+                        avgTemperatureC = temp,
+                        avgVoltageMv = 3700f + (level * 5),
+                        avgCurrentMa = if (sin(hoursSinceStart * 0.1) > 0) 1400f else -240f,
+                        bucketDurationMinutes = bucketMinutes
+                    )
+                )
+                currentTimestamp += interval
+            }
+            historyRepository.recordAggregations(aggregations)
+        }
+    }
+
     fun seedMockData() {
         viewModelScope.launch(Dispatchers.IO) {
             val now = System.currentTimeMillis()
-            val sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000)
+            // Seed 30 days of data to properly test Month view
+            val startTime = now - (30L * 24 * 60 * 60 * 1000)
 
             val interval = 15 * 60 * 1000 // every 15 minutes
-            var currentTimestamp = sevenDaysAgo
+            var currentTimestamp = startTime
 
             while (currentTimestamp <= now) {
-                val hoursSinceStart = (currentTimestamp - sevenDaysAgo) / (1000.0 * 60 * 60)
+                val hoursSinceStart = (currentTimestamp - startTime) / (1000.0 * 60 * 60)
                 // Level fluctuates between 20 and 100
                 val level = (60 + 40 * sin(hoursSinceStart * 0.2)).toInt().coerceIn(0, 100)
                 val temp = 30f + 5f * sin(hoursSinceStart * 0.5).toFloat()

@@ -3,7 +3,6 @@ package com.creative.feature_battery.presentation.ui.chart
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creative.core_data.thermal.ThermalRepository
-import com.creative.core_model.ThermalSeverity
 import com.creative.feature_battery.domain.BatterySeverityEvaluator
 import com.creative.feature_battery.domain.model.BatteryHealthUi
 import com.creative.feature_battery.domain.model.BatteryInfo
@@ -11,12 +10,12 @@ import com.creative.feature_battery.domain.model.Severity
 import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
 import com.creative.feature_battery.domain.repository.BatteryRepository
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,6 +24,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.math.sin
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class TimeWindow(val minutes: Long) {
     MIN_15(15),
@@ -38,31 +38,15 @@ data class ChartUiState(
     val endTimestamp: Long = System.currentTimeMillis()
 )
 
-data class DiagnosticAlert(
-    val title: String,
-    val message: String,
-    val severity: AlertSeverity
-)
-
-enum class AlertSeverity {
-    INFO, WARNING, CRITICAL
-}
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class BatteryChartViewModel(
     private val historyRepository: BatteryHistoryRepository,
-    private val batteryRepository: BatteryRepository,
+    batteryRepository: BatteryRepository,
     private val thermalRepository: ThermalRepository,
     private val evaluator: BatterySeverityEvaluator
 ) : ViewModel() {
 
-    private val DEBUG_SEED_MOCK_DATA = false
-
-    init {
-        if (DEBUG_SEED_MOCK_DATA) {
-            seedMockData()
-        }
-    }
+    private val debugSeedMockData = false
 
     private val _selectedWindow = MutableStateFlow(TimeWindow.HOUR_1)
     val selectedWindow: StateFlow<TimeWindow> = _selectedWindow
@@ -114,7 +98,7 @@ class BatteryChartViewModel(
     val thermalStatus = flow {
         while (true) {
             emit(thermalRepository.getThermalStatus())
-            delay(5000)
+            delay(5000.milliseconds)
         }
     }.stateIn(
         viewModelScope,
@@ -122,38 +106,50 @@ class BatteryChartViewModel(
         null
     )
 
-    val alerts: StateFlow<List<DiagnosticAlert>> = combine(thermalStatus, chartUiState) { status, state ->
-        val activeAlerts = mutableListOf<DiagnosticAlert>()
-        
-        // 1. Thermal Throttling Alert
-        if (status != null && (status.severity == ThermalSeverity.HOT || status.severity == ThermalSeverity.CRITICAL)) {
-            activeAlerts.add(
-                DiagnosticAlert(
-                    title = "Thermal Throttling Detected",
-                    message = "System is in ${status.severity} state. Performance may be reduced.",
-                    severity = AlertSeverity.CRITICAL
-                )
-            )
+    init {
+        if (debugSeedMockData) {
+            seedMockData()
         }
 
-        // 2. Battery Temperature Alert (Threshold: 40°C)
-        val latestTemp = status?.temperatureC ?: state.data.lastOrNull()?.temperatureC
-        if (latestTemp != null && latestTemp > 40f) {
-            activeAlerts.add(
-                DiagnosticAlert(
-                    title = "High Battery Temperature",
-                    message = "Battery temperature is ${"%.1f".format(latestTemp)}°C, exceeding safe threshold of 40°C.",
-                    severity = AlertSeverity.WARNING
-                )
-            )
-        }
+        viewModelScope.launch {
+            chartUiState.collect { state ->
+                if (state.data.size < 2) return@collect
 
-        activeAlerts
-    }.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
-        emptyList()
-    )
+                batteryLevelModelProducer.runTransaction {
+                    lineSeries {
+                        series(
+                            state.data.map { it.timestamp.toDouble() },
+                            state.data.map { it.level.toDouble() }
+                        )
+                    }
+                }
+                temperatureModelProducer.runTransaction {
+                    lineSeries {
+                        series(
+                            state.data.map { it.timestamp.toDouble() },
+                            state.data.map { it.temperatureC.toDouble() }
+                        )
+                    }
+                }
+                voltageModelProducer.runTransaction {
+                    lineSeries {
+                        series(
+                            state.data.map { it.timestamp.toDouble() },
+                            state.data.map { it.voltageMv?.toDouble() ?: 0.0 }
+                        )
+                    }
+                }
+                currentModelProducer.runTransaction {
+                    lineSeries {
+                        series(
+                            state.data.map { it.timestamp.toDouble() },
+                            state.data.map { it.currentNowMa?.toDouble() ?: 0.0 }
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     fun setWindow(window: TimeWindow) {
         _selectedWindow.value = window
@@ -162,8 +158,8 @@ class BatteryChartViewModel(
     private fun seedMockData() {
         viewModelScope.launch(Dispatchers.IO) {
             val now = System.currentTimeMillis()
-            // Seed 7 days of data to ensure both raw history and aggregated trends are populated
-            val startTime = now - (7L * 24 * 60 * 60 * 1000)
+            // Seed 30 days of data to properly test all trends views
+            val startTime = now - (30L * 24 * 60 * 60 * 1000)
 
             val interval = 15 * 60 * 1000 // 15 minute intervals for faster seeding
             var currentTimestamp = startTime

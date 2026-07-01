@@ -20,6 +20,7 @@ import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.core.common.Fill
@@ -32,7 +33,9 @@ fun LongTermBatteryChart(
     modifier: Modifier = Modifier,
     lineColor: Color = MaterialTheme.colorScheme.primary,
     valueSuffix: String = "",
-    isVoltage: Boolean = false
+    isVoltage: Boolean = false,
+    minX: Double? = null,
+    maxX: Double? = null
 ) {
     val dateFormat = remember { SimpleDateFormat("MM/dd", Locale.getDefault()) }
     
@@ -56,6 +59,21 @@ fun LongTermBatteryChart(
     val labelColor = MaterialTheme.colorScheme.onSurface
     val guidelineColor = MaterialTheme.colorScheme.outlineVariant
 
+    val fixedMinX = minX
+    val fixedMaxX = maxX
+
+    val rangeProvider = remember(fixedMinX, fixedMaxX) {
+        object : CartesianLayerRangeProvider {
+            override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                return fixedMinX ?: minX
+            }
+
+            override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
+                return fixedMaxX ?: maxX
+            }
+        }
+    }
+
     val lineLayer = rememberLineCartesianLayer(
         lineProvider = remember(lineColor) {
             LineCartesianLayer.LineProvider.series(
@@ -65,7 +83,8 @@ fun LongTermBatteryChart(
                     pointConnector = LineCartesianLayer.PointConnector.cubic()
                 )
             )
-        }
+        },
+        rangeProvider = rangeProvider
     )
 
     val chart = rememberCartesianChart(

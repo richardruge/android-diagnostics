@@ -39,6 +39,9 @@ fun BatteryLongTermScreen(
             onWindowSelected = viewModel::setWindow
         )
 
+        val minX = uiState.startTimestamp.toDouble()
+        val maxX = uiState.endTimestamp.toDouble()
+
         if (uiState.aggregations.size < 2) {
             Box(
                 modifier = Modifier
@@ -62,7 +65,9 @@ fun BatteryLongTermScreen(
                     LongTermBatteryChart(
                         modelProducer = viewModel.avgLevelModelProducer,
                         lineColor = Color(0xFF4CAF50),
-                        valueSuffix = "%"
+                        valueSuffix = "%",
+                        minX = minX,
+                        maxX = maxX
                     )
                 }
             }
@@ -77,7 +82,9 @@ fun BatteryLongTermScreen(
                     LongTermBatteryChart(
                         modelProducer = viewModel.avgTempModelProducer,
                         lineColor = Color(0xFFF44336),
-                        valueSuffix = "°C"
+                        valueSuffix = "°C",
+                        minX = minX,
+                        maxX = maxX
                     )
                 }
             }
@@ -93,7 +100,9 @@ fun BatteryLongTermScreen(
                         modelProducer = viewModel.avgVoltageModelProducer,
                         lineColor = Color(0xFF2196F3),
                         valueSuffix = "V",
-                        isVoltage = true
+                        isVoltage = true,
+                        minX = minX,
+                        maxX = maxX
                     )
                 }
             }
@@ -108,7 +117,9 @@ fun BatteryLongTermScreen(
                     LongTermBatteryChart(
                         modelProducer = viewModel.avgCurrentModelProducer,
                         lineColor = Color(0xFFFF9800),
-                        valueSuffix = "mA"
+                        valueSuffix = "mA",
+                        minX = minX,
+                        maxX = maxX
                     )
                 }
             }

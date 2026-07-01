@@ -26,7 +26,6 @@ import com.creative.feature_battery.domain.model.Severity
 import com.creative.feature_battery.presentation.ui.CircularBatteryGauge
 import com.creative.feature_battery.presentation.ui.SegmentedHealthIndicator
 import com.creative.feature_battery.presentation.ui.ThermalThermometer
-import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,44 +43,6 @@ fun BatteryChartScreen(
     val chartUiState by viewModel.chartUiState.collectAsStateWithLifecycle()
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-
-    // Sync producers with data state
-    LaunchedEffect(chartUiState.data, chartUiState.window) {
-        if (chartUiState.data.size >= 2) {
-            viewModel.batteryLevelModelProducer.runTransaction {
-                lineSeries {
-                    series(
-                        chartUiState.data.map { it.timestamp.toDouble() },
-                        chartUiState.data.map { it.level.toDouble() }
-                    )
-                }
-            }
-            viewModel.temperatureModelProducer.runTransaction {
-                lineSeries {
-                    series(
-                        chartUiState.data.map { it.timestamp.toDouble() },
-                        chartUiState.data.map { it.temperatureC.toDouble() }
-                    )
-                }
-            }
-            viewModel.voltageModelProducer.runTransaction {
-                lineSeries {
-                    series(
-                        chartUiState.data.map { it.timestamp.toDouble() },
-                        chartUiState.data.map { it.voltageMv?.toDouble() ?: 0.0 }
-                    )
-                }
-            }
-            viewModel.currentModelProducer.runTransaction {
-                lineSeries {
-                    series(
-                        chartUiState.data.map { it.timestamp.toDouble() },
-                        chartUiState.data.map { it.currentNowMa?.toDouble() ?: 0.0 }
-                    )
-                }
-            }
-        }
-    }
 
     val maxX = chartUiState.endTimestamp.toDouble()
     val minX = maxX - (chartUiState.window.minutes * 60 * 1000)

@@ -18,7 +18,9 @@ enum class LongTermWindow(val days: Int) {
 
 data class LongTermChartUiState(
     val aggregations: List<BatteryAggregation> = emptyList(),
-    val window: LongTermWindow = LongTermWindow.WEEK
+    val window: LongTermWindow = LongTermWindow.WEEK,
+    val startTimestamp: Long = 0L,
+    val endTimestamp: Long = System.currentTimeMillis()
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -35,13 +37,19 @@ class BatteryLongTermViewModel(
     val avgCurrentModelProducer = CartesianChartModelProducer()
 
     val uiState: StateFlow<LongTermChartUiState> = _selectedWindow.flatMapLatest { window ->
+        val now = System.currentTimeMillis()
         val since = if (window.days > 0) {
-            System.currentTimeMillis() - (window.days.toLong() * 24 * 60 * 60 * 1000)
+            now - (window.days.toLong() * 24 * 60 * 60 * 1000)
         } else {
             0L
         }
         historyRepository.observeAggregatedHistory(since).map { list ->
-            LongTermChartUiState(list.sortedBy { it.timestamp }, window)
+            LongTermChartUiState(
+                aggregations = list.sortedBy { it.timestamp },
+                window = window,
+                startTimestamp = since,
+                endTimestamp = now
+            )
         }
     }.stateIn(
         scope = viewModelScope,
@@ -52,38 +60,38 @@ class BatteryLongTermViewModel(
     init {
         viewModelScope.launch {
             uiState.collect { state ->
-                if (state.aggregations.size >= 2) {
-                    avgLevelModelProducer.runTransaction {
-                        lineSeries {
-                            series(
-                                state.aggregations.map { it.timestamp.toDouble() },
-                                state.aggregations.map { it.avgLevel.toDouble() }
-                            )
-                        }
+                if (state.aggregations.size < 2) return@collect
+
+                avgLevelModelProducer.runTransaction {
+                    lineSeries {
+                        series(
+                            state.aggregations.map { it.timestamp.toDouble() },
+                            state.aggregations.map { it.avgLevel.toDouble() }
+                        )
                     }
-                    avgTempModelProducer.runTransaction {
-                        lineSeries {
-                            series(
-                                state.aggregations.map { it.timestamp.toDouble() },
-                                state.aggregations.map { it.avgTemperatureC.toDouble() }
-                            )
-                        }
+                }
+                avgTempModelProducer.runTransaction {
+                    lineSeries {
+                        series(
+                            state.aggregations.map { it.timestamp.toDouble() },
+                            state.aggregations.map { it.avgTemperatureC.toDouble() }
+                        )
                     }
-                    avgVoltageModelProducer.runTransaction {
-                        lineSeries {
-                            series(
-                                state.aggregations.map { it.timestamp.toDouble() },
-                                state.aggregations.map { it.avgVoltageMv?.toDouble() ?: 0.0 }
-                            )
-                        }
+                }
+                avgVoltageModelProducer.runTransaction {
+                    lineSeries {
+                        series(
+                            state.aggregations.map { it.timestamp.toDouble() },
+                            state.aggregations.map { it.avgVoltageMv?.toDouble() ?: 0.0 }
+                        )
                     }
-                    avgCurrentModelProducer.runTransaction {
-                        lineSeries {
-                            series(
-                                state.aggregations.map { it.timestamp.toDouble() },
-                                state.aggregations.map { it.avgCurrentMa?.toDouble() ?: 0.0 }
-                            )
-                        }
+                }
+                avgCurrentModelProducer.runTransaction {
+                    lineSeries {
+                        series(
+                            state.aggregations.map { it.timestamp.toDouble() },
+                            state.aggregations.map { it.avgCurrentMa?.toDouble() ?: 0.0 }
+                        )
                     }
                 }
             }

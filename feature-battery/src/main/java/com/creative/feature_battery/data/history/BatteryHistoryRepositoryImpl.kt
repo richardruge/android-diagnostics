@@ -39,6 +39,20 @@ class BatteryHistoryRepositoryImpl(
         aggregationDao.deleteOlderThan(cutoff)
     }
 
+    override suspend fun recordAggregations(aggregations: List<BatteryAggregation>) {
+        val entities = aggregations.map { agg ->
+            BatteryAggregationEntity(
+                timestamp = agg.timestamp,
+                avgLevel = agg.avgLevel,
+                avgTemperatureC = agg.avgTemperatureC,
+                avgVoltageMv = agg.avgVoltageMv,
+                avgCurrentMa = agg.avgCurrentMa,
+                bucketDurationMinutes = agg.bucketDurationMinutes
+            )
+        }
+        aggregationDao.insertAll(entities)
+    }
+
     override suspend fun runAggregation() {
         val now = System.currentTimeMillis()
         val aggregationCutoff = now - (1 * 60 * 60 * 1000) // Aggregate data older than 1 hour
