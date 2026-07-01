@@ -37,17 +37,31 @@ class BatteryLongTermViewModel(
     val avgCurrentModelProducer = CartesianChartModelProducer()
 
     val uiState: StateFlow<LongTermChartUiState> = _selectedWindow.flatMapLatest { window ->
-        val now = System.currentTimeMillis()
-        val since = if (window.days > 0) {
-            now - (window.days.toLong() * 24 * 60 * 60 * 1000)
+        val sinceLimit = if (window.days > 0) {
+            System.currentTimeMillis() - (window.days.toLong() * 24 * 60 * 60 * 1000)
         } else {
             0L
         }
-        historyRepository.observeAggregatedHistory(since).map { list ->
+        historyRepository.observeAggregatedHistory(sinceLimit).map { list ->
+            // Round now to the nearest minute to stabilize chart range and avoid excessive recompositions
+            val now = (System.currentTimeMillis() / 60000) * 60000
+            val since = if (window.days > 0) {
+                now - (window.days.toLong() * 24 * 60 * 60 * 1000)
+            } else {
+                0L
+            }
+            val sortedList = list.filter { it.timestamp >= since }.sortedBy { it.timestamp }
+            
+            val startTimestamp = if (window == LongTermWindow.ALL && sortedList.isNotEmpty()) {
+                sortedList.first().timestamp
+            } else {
+                since
+            }
+
             LongTermChartUiState(
-                aggregations = list.sortedBy { it.timestamp },
+                aggregations = sortedList,
                 window = window,
-                startTimestamp = since,
+                startTimestamp = startTimestamp,
                 endTimestamp = now
             )
         }

@@ -54,7 +54,7 @@ fun LongTermBatteryChart(
         }
     }
 
-    val scrollState = rememberVicoScrollState(scrollEnabled = true)
+    val scrollState = rememberVicoScrollState(scrollEnabled = false)
     
     val labelColor = MaterialTheme.colorScheme.onSurface
     val guidelineColor = MaterialTheme.colorScheme.outlineVariant
@@ -65,11 +65,21 @@ fun LongTermBatteryChart(
     val rangeProvider = remember(fixedMinX, fixedMaxX) {
         object : CartesianLayerRangeProvider {
             override fun getMinX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                return fixedMinX ?: minX
+                val fixed = fixedMinX
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMaxX) fixed - 1.0 else fixed
+                }
+                if (!minX.isFinite()) return 0.0
+                return if (minX == maxX) minX - 1.0 else minX
             }
 
             override fun getMaxX(minX: Double, maxX: Double, extraStore: com.patrykandpatrick.vico.core.common.data.ExtraStore): Double {
-                return fixedMaxX ?: maxX
+                val fixed = fixedMaxX
+                if (fixed != null && fixed.isFinite()) {
+                    return if (fixed == fixedMinX) fixed + 1.0 else fixed
+                }
+                if (!maxX.isFinite()) return 1.0
+                return if (minX == maxX) maxX + 1.0 else maxX
             }
         }
     }

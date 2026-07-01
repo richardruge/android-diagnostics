@@ -55,7 +55,9 @@ class BatteryHistoryRepositoryImpl(
 
     override suspend fun runAggregation() {
         val now = System.currentTimeMillis()
-        val aggregationCutoff = now - (1 * 60 * 60 * 1000) // Aggregate data older than 1 hour
+        // Aggregate all available data up to now. 
+        // Buckets will be updated as more data arrives for the current period.
+        val aggregationCutoff = now
         val deletionCutoff = now - (24 * 60 * 60 * 1000) // Keep 24 hours of raw data for the main charts
         val bucketMinutes = 60 // 1 hour buckets
         

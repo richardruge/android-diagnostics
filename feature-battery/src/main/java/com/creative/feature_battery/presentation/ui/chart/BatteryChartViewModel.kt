@@ -19,10 +19,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import kotlin.math.sin
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -66,12 +68,18 @@ class BatteryChartViewModel(
         
         // Fetch sampled data with a safety limit to prevent CursorWindow size crashes (2MB limit)
         historyRepository.observeHistorySampled(cutoff, samplingRate, 2000).map { history ->
-            val now = System.currentTimeMillis()
+            // Round now to the nearest 30 seconds to stabilize chart range and avoid jitter/OOM
+            val now = (System.currentTimeMillis() / 30000) * 30000
             val filtered = history.filter { it.temperatureC.isFinite() }
                 .sortedBy { it.timestamp }
                 .distinctBy { it.timestamp }
             ChartUiState(filtered, window, now)
         }
+    }
+    .distinctUntilChanged { old, new ->
+        old.window == new.window && 
+        old.data.size == new.data.size && 
+        (old.data.isEmpty() || (old.data.last().timestamp == new.data.last().timestamp))
     }
     .flowOn(Dispatchers.Default)
     .stateIn(
@@ -112,42 +120,47 @@ class BatteryChartViewModel(
         }
 
         viewModelScope.launch {
-            chartUiState.collect { state ->
-                if (state.data.size < 2) return@collect
+            chartUiState
+                .collect { state ->
+                    if (state.data.size < 2) return@collect
 
-                batteryLevelModelProducer.runTransaction {
-                    lineSeries {
-                        series(
-                            state.data.map { it.timestamp.toDouble() },
-                            state.data.map { it.level.toDouble() }
-                        )
+                    try {
+                        batteryLevelModelProducer.runTransaction {
+                            lineSeries {
+                                series(
+                                    state.data.map { it.timestamp.toDouble() },
+                                    state.data.map { it.level.toDouble() }
+                                )
+                            }
+                        }
+                        temperatureModelProducer.runTransaction {
+                            lineSeries {
+                                series(
+                                    state.data.map { it.timestamp.toDouble() },
+                                    state.data.map { it.temperatureC.toDouble() }
+                                )
+                            }
+                        }
+                        voltageModelProducer.runTransaction {
+                            lineSeries {
+                                series(
+                                    state.data.map { it.timestamp.toDouble() },
+                                    state.data.map { it.voltageMv?.toDouble() ?: 0.0 }
+                                )
+                            }
+                        }
+                        currentModelProducer.runTransaction {
+                            lineSeries {
+                                series(
+                                    state.data.map { it.timestamp.toDouble() },
+                                    state.data.map { it.currentNowMa?.toDouble() ?: 0.0 }
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Timber.e(e, "Error updating chart model producers")
                     }
                 }
-                temperatureModelProducer.runTransaction {
-                    lineSeries {
-                        series(
-                            state.data.map { it.timestamp.toDouble() },
-                            state.data.map { it.temperatureC.toDouble() }
-                        )
-                    }
-                }
-                voltageModelProducer.runTransaction {
-                    lineSeries {
-                        series(
-                            state.data.map { it.timestamp.toDouble() },
-                            state.data.map { it.voltageMv?.toDouble() ?: 0.0 }
-                        )
-                    }
-                }
-                currentModelProducer.runTransaction {
-                    lineSeries {
-                        series(
-                            state.data.map { it.timestamp.toDouble() },
-                            state.data.map { it.currentNowMa?.toDouble() ?: 0.0 }
-                        )
-                    }
-                }
-            }
         }
     }
 

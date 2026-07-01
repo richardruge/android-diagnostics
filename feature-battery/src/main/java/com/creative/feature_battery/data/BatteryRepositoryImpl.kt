@@ -6,16 +6,21 @@ import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
 import com.creative.feature_battery.domain.repository.BatteryRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
+@OptIn(FlowPreview::class)
 class BatteryRepositoryImpl(
-    private val provider: BatteryInfoProvider,
+    provider: BatteryInfoProvider,
     private val historyRepository: BatteryHistoryRepository
 ) : BatteryRepository {
 
@@ -34,6 +39,17 @@ class BatteryRepositoryImpl(
             .map { it.toBatteryInfo() }
             .onEach { info ->
                 latest.value = info
+            }
+            // Throttling database writes to avoid OOM and excessive disk I/O
+            // We sample every 30 seconds, but we always keep the latest in memory above
+            .sample(30.seconds)
+            .distinctUntilChanged { old, new ->
+                // Only record if level, charging state, or significant temp change occurs
+                old.level == new.level && 
+                old.isCharging == new.isCharging && 
+                Math.abs(old.temperatureC - new.temperatureC) < 0.5f
+            }
+            .onEach { info ->
                 historyRepository.record(info)
             }
             .launchIn(scope)

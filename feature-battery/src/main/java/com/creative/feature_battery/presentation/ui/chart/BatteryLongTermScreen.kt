@@ -6,6 +6,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -55,72 +56,80 @@ fun BatteryLongTermScreen(
                 )
             }
         } else {
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Average Battery Level (%)",
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    LongTermBatteryChart(
-                        modelProducer = viewModel.avgLevelModelProducer,
-                        lineColor = Color(0xFF4CAF50),
-                        valueSuffix = "%",
-                        minX = minX,
-                        maxX = maxX
-                    )
+            key(selectedWindow) {
+                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Average Battery Level (%)",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        LongTermBatteryChart(
+                            modelProducer = viewModel.avgLevelModelProducer,
+                            lineColor = Color(0xFF4CAF50),
+                            valueSuffix = "%",
+                            minX = minX,
+                            maxX = maxX
+                        )
+                    }
                 }
             }
 
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Average Temperature (°C)",
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    LongTermBatteryChart(
-                        modelProducer = viewModel.avgTempModelProducer,
-                        lineColor = Color(0xFFF44336),
-                        valueSuffix = "°C",
-                        minX = minX,
-                        maxX = maxX
-                    )
+            key(selectedWindow) {
+                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Average Temperature (°C)",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        LongTermBatteryChart(
+                            modelProducer = viewModel.avgTempModelProducer,
+                            lineColor = Color(0xFFF44336),
+                            valueSuffix = "°C",
+                            minX = minX,
+                            maxX = maxX
+                        )
+                    }
                 }
             }
 
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Average Voltage (V)",
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    LongTermBatteryChart(
-                        modelProducer = viewModel.avgVoltageModelProducer,
-                        lineColor = Color(0xFF2196F3),
-                        valueSuffix = "V",
-                        isVoltage = true,
-                        minX = minX,
-                        maxX = maxX
-                    )
+            key(selectedWindow) {
+                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Average Voltage (V)",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        LongTermBatteryChart(
+                            modelProducer = viewModel.avgVoltageModelProducer,
+                            lineColor = Color(0xFF2196F3),
+                            valueSuffix = "V",
+                            isVoltage = true,
+                            minX = minX,
+                            maxX = maxX
+                        )
+                    }
                 }
             }
 
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Average Current (mA)",
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    LongTermBatteryChart(
-                        modelProducer = viewModel.avgCurrentModelProducer,
-                        lineColor = Color(0xFFFF9800),
-                        valueSuffix = "mA",
-                        minX = minX,
-                        maxX = maxX
-                    )
+            key(selectedWindow) {
+                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Average Current (mA)",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        LongTermBatteryChart(
+                            modelProducer = viewModel.avgCurrentModelProducer,
+                            lineColor = Color(0xFFFF9800),
+                            valueSuffix = "mA",
+                            minX = minX,
+                            maxX = maxX
+                        )
+                    }
                 }
             }
             
