@@ -1,0 +1,205 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 8,
+    "identityHash": "931b6fb6387e1911422f308daf74b0a1",
+    "entities": [
+      {
+        "tableName": "battery_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `level` INTEGER NOT NULL, `temperatureC` REAL NOT NULL, `isCharging` INTEGER NOT NULL, `chargeRateMah` INTEGER, `health` TEXT NOT NULL, `capacityMah` INTEGER, `voltageMv` INTEGER, `technology` TEXT, `cycleCount` INTEGER, `stateOfHealth` INTEGER, `currentNowMa` INTEGER, `currentAverageMa` INTEGER, `maxChargingCurrentUa` INTEGER, `maxChargingVoltageMv` INTEGER, `timestamp` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "level",
+            "columnName": "level",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "temperatureC",
+            "columnName": "temperatureC",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isCharging",
+            "columnName": "isCharging",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chargeRateMah",
+            "columnName": "chargeRateMah",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "health",
+            "columnName": "health",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "capacityMah",
+            "columnName": "capacityMah",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "voltageMv",
+            "columnName": "voltageMv",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "technology",
+            "columnName": "technology",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cycleCount",
+            "columnName": "cycleCount",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "stateOfHealth",
+            "columnName": "stateOfHealth",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "currentNowMa",
+            "columnName": "currentNowMa",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "currentAverageMa",
+            "columnName": "currentAverageMa",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "maxChargingCurrentUa",
+            "columnName": "maxChargingCurrentUa",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "maxChargingVoltageMv",
+            "columnName": "maxChargingVoltageMv",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "battery_aggregation",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` INTEGER NOT NULL, `avgLevel` REAL NOT NULL, `avgTemperatureC` REAL NOT NULL, `avgVoltageMv` REAL, `avgCurrentMa` REAL, `bucketDurationMinutes` INTEGER NOT NULL, PRIMARY KEY(`timestamp`))",
+        "fields": [
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "avgLevel",
+            "columnName": "avgLevel",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "avgTemperatureC",
+            "columnName": "avgTemperatureC",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "avgVoltageMv",
+            "columnName": "avgVoltageMv",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "avgCurrentMa",
+            "columnName": "avgCurrentMa",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "bucketDurationMinutes",
+            "columnName": "bucketDurationMinutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "timestamp"
+          ]
+        }
+      },
+      {
+        "tableName": "app_usage_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `packageName` TEXT NOT NULL, `startTime` INTEGER NOT NULL, `endTime` INTEGER NOT NULL, `avgMa` REAL NOT NULL, `totalMah` REAL NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "packageName",
+            "columnName": "packageName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTime",
+            "columnName": "startTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endTime",
+            "columnName": "endTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "avgMa",
+            "columnName": "avgMa",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalMah",
+            "columnName": "totalMah",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '931b6fb6387e1911422f308daf74b0a1')"
+    ]
+  }
+}

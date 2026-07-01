@@ -1,6 +1,8 @@
 package com.creative.feature_battery.di
 
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.creative.feature_battery.data.BatteryRepositoryImpl
 import com.creative.feature_battery.data.BatterySettingsRepositoryImpl
 import com.creative.feature_battery.data.history.BatteryHistoryDatabase
@@ -23,14 +25,22 @@ import org.koin.dsl.module
 val batteryFeatureModule = module {
 
     // Room database
+    val migration7to8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Create the new app_usage_history table added in version 8
+            db.execSQL("CREATE TABLE IF NOT EXISTS `app_usage_history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `packageName` TEXT NOT NULL, `startTime` INTEGER NOT NULL, `endTime` INTEGER NOT NULL, `avgMa` REAL NOT NULL, `totalMah` REAL NOT NULL)")
+        }
+    }
+
     single {
         Room.databaseBuilder(
             get(),
             BatteryHistoryDatabase::class.java,
             "battery_history.db"
         )
-            .fallbackToDestructiveMigration(false)
-            .fallbackToDestructiveMigrationOnDowngrade(false)
+            .addMigrations(migration7to8)
+            .fallbackToDestructiveMigration(dropAllTables = true)
+            .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
     }
 
