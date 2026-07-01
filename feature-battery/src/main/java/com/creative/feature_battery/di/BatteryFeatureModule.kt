@@ -29,7 +29,8 @@ val batteryFeatureModule = module {
             BatteryHistoryDatabase::class.java,
             "battery_history.db"
         )
-            .fallbackToDestructiveMigration(dropAllTables = true)
+            .fallbackToDestructiveMigration(false)
+            .fallbackToDestructiveMigrationOnDowngrade(false)
             .build()
     }
 

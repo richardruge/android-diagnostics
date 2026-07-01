@@ -1,5 +1,6 @@
 package com.creative.feature_battery.data.history
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 
@@ -9,7 +10,10 @@ import androidx.room.RoomDatabase
         BatteryAggregationEntity::class,
         AppUsageEntity::class
     ],
-    version = 7,
+    version = 8,
+    autoMigrations = [
+        AutoMigration(from = 7, to = 8)
+    ],
     exportSchema = true
 )
 abstract class BatteryHistoryDatabase : RoomDatabase() {
