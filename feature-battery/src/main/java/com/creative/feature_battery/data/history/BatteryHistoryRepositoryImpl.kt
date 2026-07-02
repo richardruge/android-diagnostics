@@ -27,8 +27,8 @@ class BatteryHistoryRepositoryImpl(
         dao.insertAll(entries.map { it.toEntity() })
 
         val now = System.currentTimeMillis()
-        // Aggregating every 30 mins keeps the data clean without too many writes
-        if (now - lastAggregationTime > 30 * 60 * 1000) {
+        // Aggregating every 10 mins keeps the data clean without too many writes
+        if (now - lastAggregationTime > 10 * 60 * 1000) {
             runAggregation()
             cleanupOldAggregations()
             lastAggregationTime = now

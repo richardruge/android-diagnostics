@@ -8,13 +8,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(FlowPreview::class)
@@ -34,24 +34,27 @@ class BatteryRepositoryImpl(
             historyRepository.record(initialInfo)
         }
 
-        val databaseBatch = mutableListOf<BatteryInfo>()
+        // 1. Keep 'latest' updated as fast as the system provides info
         provider.observe()
-            .map { it.toBatteryInfo() }
-            .onEach { info ->
-                latest.value = info
-            }
-            // Sample every 15 seconds (4x per minute)
-            .sample(15.seconds)
-            .onEach { info ->
-                databaseBatch.add(info)
-                // Write to database once we have 4 samples (1x per minute)
+            .onEach { latest.value = it.toBatteryInfo() }
+            .launchIn(scope)
+
+        // 2. Separately, record to database at a fixed interval
+        // This ensures data is saved even if the system doesn't send broadcasts (e.g. idle battery)
+        scope.launch {
+            val databaseBatch = mutableListOf<BatteryInfo>()
+            while (true) {
+                delay(15.seconds)
+                databaseBatch.add(latest.value)
+                
                 if (databaseBatch.size >= 4) {
                     val toRecord = databaseBatch.toList()
                     databaseBatch.clear()
                     historyRepository.record(toRecord)
+                    Timber.d("Recorded ${toRecord.size} battery samples to database")
                 }
             }
-            .launchIn(scope)
+        }
     }
 
     override fun observeBatteryInfo(): Flow<BatteryInfo> = latest

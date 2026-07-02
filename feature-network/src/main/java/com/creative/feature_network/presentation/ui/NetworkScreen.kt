@@ -160,7 +160,7 @@ private fun MultiHopPingCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Hop-by-Hop Latency",
+                    text = "Network Diagnostics",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -187,7 +187,11 @@ private fun PingRow(label: String, ms: Long?, isTesting: Boolean) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = label, 
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f)
+        )
         val color = when {
             ms == null -> MaterialTheme.colorScheme.onSurface
             ms < 30 -> Color(0xFF4CAF50)
@@ -223,20 +227,19 @@ private fun WifiDetails(state: NetworkState) {
     
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         DetailCard(label = "SSID", value = state.ssid ?: "Unknown")
-        DetailCard(label = "BSSID", value = state.bssid ?: "Unknown")
+        DetailCard(label = "Router MAC", value = state.bssid ?: "Unknown")
         DetailCard(
             label = "Signal Strength", 
             value = "${state.signalStrengthDbm} dBm ($signalRating)"
         )
-        val frequencyValue = if (state.frequencyMhz != null) {
-            "${state.frequencyMhz} MHz (Ch ${channel ?: "?"})" + (state.wifiStandard?.let { " $it" } ?: "")
-        } else {
-            "Unknown"
+        DetailCard(label = "Frequency", value = state.frequencyMhz?.let { "$it MHz" } ?: "Unknown")
+        DetailCard(label = "Channel", value = channel?.toString() ?: "Unknown")
+        state.wifiStandard?.let {
+            DetailCard(label = "Protocol", value = it)
         }
-        DetailCard(label = "Frequency & Channel", value = frequencyValue)
         DetailCard(label = "IP Address", value = state.ipAddress ?: "Unknown")
         DetailCard(label = "Gateway", value = state.gatewayIp ?: "Unknown")
-        DetailCard(label = "DNS Servers", value = state.dnsServers.joinToString(", ").ifEmpty { "Unknown" })
+        DetailCard(label = "DNS Servers", value = state.dnsServers.joinToString("\n").ifEmpty { "Unknown" })
         DetailCard(label = "Link Speed", value = "${state.linkSpeedMbps} Mbps")
     }
 }
@@ -268,12 +271,24 @@ private fun DetailCard(label: String, value: String) {
         )
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.Top
         ) {
-            Text(text = label, style = MaterialTheme.typography.labelLarge)
-            Text(text = value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1.5f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.End
+            )
         }
     }
 }

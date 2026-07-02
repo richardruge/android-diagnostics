@@ -89,6 +89,7 @@ class BatteryChartViewModel(
     .distinctUntilChanged { old, new ->
         old.window == new.window && 
         old.data.size == new.data.size && 
+        old.endTimestamp == new.endTimestamp &&
         (old.data.isEmpty() || (old.data.last().timestamp == new.data.last().timestamp))
     }
     .flowOn(Dispatchers.Default)
