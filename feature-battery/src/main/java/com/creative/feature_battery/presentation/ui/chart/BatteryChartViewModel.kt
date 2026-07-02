@@ -29,7 +29,6 @@ import kotlin.math.sin
 import kotlin.time.Duration.Companion.milliseconds
 
 enum class TimeWindow(val minutes: Long) {
-    MIN_15(15),
     HOUR_1(60),
     HOUR_24(1440)
 }
@@ -63,17 +62,28 @@ class BatteryChartViewModel(
         val samplingRate = when (window) {
             TimeWindow.HOUR_24 -> 10 // Downsample to every 10th point for 24h view
             TimeWindow.HOUR_1 -> 2   // Every 2nd point for 1h
-            else -> 1
         }
         
         // Fetch sampled data with a safety limit to prevent CursorWindow size crashes (2MB limit)
         historyRepository.observeHistorySampled(cutoff, samplingRate, 2000).map { history ->
-            // Round now to the nearest 30 seconds to stabilize chart range and avoid jitter/OOM
+            // Round now to the nearest 30 seconds to stabilize chart range and avoid jitter
             val now = (System.currentTimeMillis() / 30000) * 30000
-            val filtered = history.filter { it.temperatureC.isFinite() }
+            val windowMinX = now - (window.minutes * 60 * 1000)
+            
+            val sorted = history.filter { it.temperatureC.isFinite() }
                 .sortedBy { it.timestamp }
                 .distinctBy { it.timestamp }
-            ChartUiState(filtered, window, now)
+
+            // Fill-in logic: If we don't have data for the full window, 
+            // extend the earliest point to the start of the chart.
+            val paddedData = if (sorted.isNotEmpty() && sorted.first().timestamp > windowMinX) {
+                val first = sorted.first()
+                listOf(first.copy(timestamp = windowMinX)) + sorted
+            } else {
+                sorted
+            }
+
+            ChartUiState(paddedData, window, now)
         }
     }
     .distinctUntilChanged { old, new ->

@@ -10,7 +10,6 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -35,22 +34,22 @@ class BatteryRepositoryImpl(
             historyRepository.record(initialInfo)
         }
 
+        val databaseBatch = mutableListOf<BatteryInfo>()
         provider.observe()
             .map { it.toBatteryInfo() }
             .onEach { info ->
                 latest.value = info
             }
-            // Throttling database writes to avoid OOM and excessive disk I/O
-            // We sample every 30 seconds, but we always keep the latest in memory above
-            .sample(30.seconds)
-            .distinctUntilChanged { old, new ->
-                // Only record if level, charging state, or significant temp change occurs
-                old.level == new.level && 
-                old.isCharging == new.isCharging && 
-                Math.abs(old.temperatureC - new.temperatureC) < 0.5f
-            }
+            // Sample every 15 seconds (4x per minute)
+            .sample(15.seconds)
             .onEach { info ->
-                historyRepository.record(info)
+                databaseBatch.add(info)
+                // Write to database once we have 4 samples (1x per minute)
+                if (databaseBatch.size >= 4) {
+                    val toRecord = databaseBatch.toList()
+                    databaseBatch.clear()
+                    historyRepository.record(toRecord)
+                }
             }
             .launchIn(scope)
     }

@@ -19,8 +19,13 @@ class BatteryHistoryRepositoryImpl(
     private var lastAggregationTime = 0L
 
     override suspend fun record(info: BatteryInfo) {
-        dao.insert(info.toEntity())
-        
+        record(listOf(info))
+    }
+
+    override suspend fun record(entries: List<BatteryInfo>) {
+        if (entries.isEmpty()) return
+        dao.insertAll(entries.map { it.toEntity() })
+
         val now = System.currentTimeMillis()
         // Aggregating every 30 mins keeps the data clean without too many writes
         if (now - lastAggregationTime > 30 * 60 * 1000) {
@@ -28,7 +33,7 @@ class BatteryHistoryRepositoryImpl(
             cleanupOldAggregations()
             lastAggregationTime = now
         }
-        
+
         dao.trimToSize(maxSize)
     }
 

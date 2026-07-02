@@ -29,7 +29,7 @@ interface BatteryHistoryDao {
             FROM battery_history 
             WHERE timestamp > :since
         ) 
-        WHERE row_num % :samplingRate = 0 
+        WHERE (row_num - 1) % :samplingRate = 0
         ORDER BY timestamp DESC
         LIMIT :limit
     """)

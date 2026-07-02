@@ -255,7 +255,6 @@ private fun TimeWindowSelector(
                 label = {
                     Text(
                         text = when (window) {
-                            TimeWindow.MIN_15 -> "15m"
                             TimeWindow.HOUR_1 -> "1h"
                             TimeWindow.HOUR_24 -> "24h"
                         }
