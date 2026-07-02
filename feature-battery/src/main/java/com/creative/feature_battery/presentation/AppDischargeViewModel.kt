@@ -19,8 +19,17 @@ import timber.log.Timber
 
 data class AppDischargeUiState(
     val sessions: List<AppDischargeUiModel> = emptyList(),
+    val maxMah: Double = 1.0,
+    val totalTrackedMah: Double = 0.0,
+    val selectedWindow: AppTimeWindow = AppTimeWindow.HOUR_1,
     val hasPermission: Boolean = true
 )
+
+enum class AppTimeWindow(val label: String, val durationMs: Long) {
+    HOUR_1("1h", 60 * 60 * 1000L),
+    HOUR_6("6h", 6 * 60 * 60 * 1000L),
+    HOUR_24("24h", 24 * 60 * 60 * 1000L)
+}
 
 data class AppDischargeUiModel(
     val packageName: String,
@@ -29,7 +38,8 @@ data class AppDischargeUiModel(
     val totalMah: Double,
     val totalPercentage: Double,
     val drainRatePercentPerHour: Double,
-    val durationMs: Long
+    val durationMs: Long,
+    val sparklinePoints: List<Float> = emptyList()
 )
 
 class AppDischargeViewModel(
@@ -40,6 +50,7 @@ class AppDischargeViewModel(
 ) : ViewModel() {
 
     private val packageManager = context.packageManager
+    private val _selectedWindow = MutableStateFlow(AppTimeWindow.HOUR_1)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<AppDischargeUiState> = flow {
@@ -47,16 +58,50 @@ class AppDischargeViewModel(
     }.flatMapLatest { capacity ->
         combine(
             sessionManager.sessionHistory,
+            _selectedWindow,
             MutableStateFlow(permissionHelper.checkPermission())
-        ) { history, _ ->
-            val aggregatedSessions = history.groupBy { it.packageName }
+        ) { history, window, _ ->
+            val now = System.currentTimeMillis()
+            val cutoff = now - window.durationMs
+            val filteredHistory = history.filter { it.endTime > cutoff }
+            
+            val totalTrackedMah = filteredHistory.sumOf { it.totalMah }
+            
+            val aggregatedSessions = filteredHistory.groupBy { it.packageName }
                 .map { (packageName, sessions) ->
                     val totalMah = sessions.sumOf { it.totalMah }
-                    val totalDurationMs = sessions.sumOf { it.endTime - it.startTime }
+                    val totalDurationMs = sessions.sumOf { 
+                        val start = maxOf(it.startTime, cutoff)
+                        val end = it.endTime
+                        if (end > start) end - start else 0L
+                    }
                     
-                    val totalPercentage = (totalMah / capacity.toDouble()) * 100.0
+                    val impactPercentage = if (totalTrackedMah > 0) (totalMah / totalTrackedMah) * 100.0 else 0.0
+                    val capacityPercentage = (totalMah / capacity.toDouble()) * 100.0
                     val durationHours = totalDurationMs / 3600000.0
-                    val drainRate = if (durationHours > 0) totalPercentage / durationHours else 0.0
+                    val drainRate = if (durationHours > 0) capacityPercentage / durationHours else 0.0
+
+                    // Generate sparkline (20 buckets)
+                    val buckets = 20
+                    val bucketSize = window.durationMs / buckets
+                    val sparkline = DoubleArray(buckets)
+                    sessions.forEach { session ->
+                        for (i in 0 until buckets) {
+                            val bucketStart = cutoff + (i * bucketSize)
+                            val bucketEnd = bucketStart + bucketSize
+                            
+                            val overlapStart = maxOf(session.startTime, bucketStart)
+                            val overlapEnd = minOf(session.endTime, bucketEnd)
+                            
+                            if (overlapEnd > overlapStart) {
+                                val sessionDuration = session.endTime - session.startTime
+                                if (sessionDuration > 0) {
+                                    val ratio = (overlapEnd - overlapStart).toDouble() / sessionDuration
+                                    sparkline[i] += session.totalMah * ratio
+                                }
+                            }
+                        }
+                    }
 
                     val appName = getAppName(packageName)
                     val icon = try {
@@ -70,15 +115,21 @@ class AppDischargeViewModel(
                         name = appName,
                         icon = icon,
                         totalMah = totalMah,
-                        totalPercentage = totalPercentage,
+                        totalPercentage = impactPercentage,
                         drainRatePercentPerHour = drainRate,
-                        durationMs = totalDurationMs
+                        durationMs = totalDurationMs,
+                        sparklinePoints = sparkline.map { it.toFloat() }
                     )
                 }
                 .sortedByDescending { it.totalMah }
+            
+            val maxMah = aggregatedSessions.firstOrNull()?.totalMah ?: 1.0
 
             AppDischargeUiState(
                 sessions = aggregatedSessions,
+                maxMah = maxMah,
+                totalTrackedMah = totalTrackedMah,
+                selectedWindow = window,
                 hasPermission = permissionHelper.checkPermission()
             )
         }
@@ -87,6 +138,10 @@ class AppDischargeViewModel(
         SharingStarted.WhileSubscribed(5000),
         AppDischargeUiState()
     )
+
+    fun setWindow(window: AppTimeWindow) {
+        _selectedWindow.value = window
+    }
 
     private fun getAppName(packageName: String): String {
         return try {
