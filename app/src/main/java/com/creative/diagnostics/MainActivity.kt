@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                 "battery_debug" -> "Debug Data"
                 "network" -> "Network Diagnostics"
                 "settings" -> "Settings"
-                else -> "Android Diagnostics"
+                else -> "OmniGauge"
             }
         }
 

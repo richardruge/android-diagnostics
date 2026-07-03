@@ -28,7 +28,7 @@ dependencyResolutionManagement {
 }
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-rootProject.name = "AndroidDiagnostics"
+rootProject.name = "OmniGauge"
 
 include(":app")
 include(":core-model")
