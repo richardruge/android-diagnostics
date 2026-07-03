@@ -42,6 +42,18 @@ class BatterySystemDataSourceImpl(
         }
     }
 
+    @android.annotation.SuppressLint("PrivateApi")
+    override fun getDesignCapacityMah(): Int? {
+        return try {
+            val powerProfileClass = Class.forName("com.android.internal.os.PowerProfile")
+            val powerProfile = powerProfileClass.getConstructor(Context::class.java).newInstance(context)
+            val batteryCapacity = powerProfileClass.getMethod("getBatteryCapacity").invoke(powerProfile) as Double
+            batteryCapacity.toInt()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     override fun getCycleCount(): Int? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
@@ -52,10 +64,16 @@ class BatterySystemDataSourceImpl(
     }
 
     override fun getStateOfHealth(): Int? {
-        // State of Health (SOH) is not directly exposed as a standard property in all Android versions
-        // Some manufacturers might expose it, but for a generic implementation, we might leave it as null
-        // or try to find a system-specific way.
-        // In API 34+, there are some hidden or manufacturer-specific extras.
-        return null
+        val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) ?: return null
+        
+        val standardSoh = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            intent.getIntExtra("android.os.extra.STATE_OF_HEALTH", -1).takeIf { it != -1 }
+        } else {
+            null
+        }
+        
+        return standardSoh 
+            ?: intent.getIntExtra("health_percentage", -1).takeIf { it != -1 }
+            ?: intent.getIntExtra("soh", -1).takeIf { it != -1 }
     }
 }

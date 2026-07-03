@@ -12,6 +12,7 @@ data class BatteryHistoryEntity(
     val chargeRateMah: Int?,
     val health: String,
     val capacityMah: Int?,
+    val designCapacityMah: Int?,
     val voltageMv: Int?,
     val technology: String?,
     val cycleCount: Int?,

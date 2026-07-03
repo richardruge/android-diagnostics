@@ -209,6 +209,7 @@ class BatteryChartViewModel(
                     chargeRateMah = if (hourOfDay >= 16) 1500 else null,
                     health = BatteryHealthUi.GOOD,
                     capacityMah = 5000,
+                    designCapacityMah = 5050,
                     voltageMv = 3800 + (level * 4),
                     technology = "Li-ion",
                     cycleCount = 150 + dayOffset,

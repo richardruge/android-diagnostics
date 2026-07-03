@@ -119,6 +119,7 @@ fun BatteryInfo.toEntity() = BatteryHistoryEntity(
     chargeRateMah = chargeRateMah,
     health = health.name,
     capacityMah = capacityMah,
+    designCapacityMah = designCapacityMah,
     voltageMv = voltageMv,
     technology = technology,
     cycleCount = cycleCount,
@@ -141,6 +142,7 @@ fun BatteryHistoryEntity.toDomain() = BatteryInfo(
         BatteryHealthUi.UNSPECIFIED
     },
     capacityMah = capacityMah,
+    designCapacityMah = designCapacityMah,
     voltageMv = voltageMv,
     technology = technology,
     cycleCount = cycleCount,

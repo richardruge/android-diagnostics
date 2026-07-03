@@ -12,7 +12,6 @@ import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
 import com.creative.feature_battery.domain.repository.BatteryRepository
 import com.creative.feature_battery.domain.repository.BatterySettingsRepository
 import com.creative.feature_battery.presentation.BatterySettingsViewModel
-import com.creative.feature_battery.presentation.BatteryViewModel
 import com.creative.feature_battery.presentation.AppDischargeViewModel
 import com.creative.feature_battery.presentation.ui.chart.BatteryChartViewModel
 import com.creative.feature_battery.presentation.ui.chart.BatteryLongTermViewModel
@@ -29,6 +28,29 @@ val batteryFeatureModule = module {
         override fun migrate(db: SupportSQLiteDatabase) {
             // Create the new app_usage_history table added in version 8
             db.execSQL("CREATE TABLE IF NOT EXISTS `app_usage_history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `packageName` TEXT NOT NULL, `startTime` INTEGER NOT NULL, `endTime` INTEGER NOT NULL, `avgMa` REAL NOT NULL, `totalMah` REAL NOT NULL)")
+            
+            // Add missing column to battery_history that was accidentally omitted in version 8
+            db.execSQL("ALTER TABLE `battery_history` ADD COLUMN `designCapacityMah` INTEGER DEFAULT NULL")
+        }
+    }
+
+    val migration8to9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Fix missing column designCapacityMah from version 8 if it's still missing
+            val cursor = db.query("PRAGMA table_info(`battery_history`)", emptyArray())
+            var hasDesignCapacity = false
+            while (cursor.moveToNext()) {
+                val name = cursor.getString(cursor.getColumnIndexOrThrow("name"))
+                if (name == "designCapacityMah") {
+                    hasDesignCapacity = true
+                    break
+                }
+            }
+            cursor.close()
+
+            if (!hasDesignCapacity) {
+                db.execSQL("ALTER TABLE `battery_history` ADD COLUMN `designCapacityMah` INTEGER DEFAULT NULL")
+            }
         }
     }
 
@@ -38,9 +60,9 @@ val batteryFeatureModule = module {
             BatteryHistoryDatabase::class.java,
             "battery_history.db"
         )
-            .addMigrations(migration7to8)
-            .fallbackToDestructiveMigration(dropAllTables = true)
-            .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
+            .addMigrations(migration7to8, migration8to9)
+            .fallbackToDestructiveMigration(true)
+            .fallbackToDestructiveMigrationOnDowngrade(true)
             .build()
     }
 
@@ -78,7 +100,6 @@ val batteryFeatureModule = module {
     single<BatterySettingsRepository> { BatterySettingsRepositoryImpl(get()) }
 
     // ViewModels
-    viewModelOf(::BatteryViewModel)
     viewModelOf(::AppDischargeViewModel)
     viewModelOf(::BatterySettingsViewModel)
     viewModelOf(::BatteryChartViewModel)

@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase
         BatteryAggregationEntity::class,
         AppUsageEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 abstract class BatteryHistoryDatabase : RoomDatabase() {

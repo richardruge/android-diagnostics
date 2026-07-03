@@ -90,6 +90,7 @@ class BatteryDebugViewModel(
                     chargeRateMah = if (sin(hoursSinceStart * 0.1) > 0) 1500 else null,
                     health = BatteryHealthUi.GOOD,
                     capacityMah = 5000,
+                    designCapacityMah = 5050,
                     voltageMv = 3700 + (level * 5),
                     technology = "Li-ion",
                     cycleCount = 100,

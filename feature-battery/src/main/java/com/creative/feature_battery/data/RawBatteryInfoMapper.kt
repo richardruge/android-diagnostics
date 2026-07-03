@@ -11,6 +11,7 @@ fun RawBatteryInfo.toBatteryInfo(): BatteryInfo =
         chargeRateMah = chargeRateMah,
         health = health.toUi(),
         capacityMah = capacityMah,
+        designCapacityMah = designCapacityMah,
         voltageMv = voltageMv,
         technology = technology,
         cycleCount = cycleCount,

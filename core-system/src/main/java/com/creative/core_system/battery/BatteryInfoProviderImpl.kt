@@ -39,6 +39,19 @@ class BatteryInfoProviderImpl(
         return intent!!.toRawBatteryInfo()
     }
 
+    @android.annotation.SuppressLint("PrivateApi")
+    private fun getDesignCapacity(): Int? {
+        return try {
+            val powerProfileClass = Class.forName("com.android.internal.os.PowerProfile")
+            val powerProfile = powerProfileClass.getConstructor(Context::class.java).newInstance(context)
+            val batteryCapacity = powerProfileClass.getMethod("getBatteryCapacity").invoke(powerProfile) as Double
+            batteryCapacity.toInt()
+        } catch (_: Exception) {
+            // PowerProfile is an internal API and may be restricted on some devices/Android versions
+            null
+        }
+    }
+
     private fun Intent.toRawBatteryInfo(): RawBatteryInfo {
         val level = getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         val scale = getIntExtra(BatteryManager.EXTRA_SCALE, -1)
@@ -69,7 +82,8 @@ class BatteryInfoProviderImpl(
             getIntExtra("android.os.extra.STATE_OF_HEALTH", -1).takeIf { it != -1 }
         } else {
             null
-        }
+        } ?: getIntExtra("health_percentage", -1).takeIf { it != -1 }
+        ?: getIntExtra("soh", -1).takeIf { it != -1 }
 
         val currentNow = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
         val currentAverage = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE)
@@ -98,7 +112,8 @@ class BatteryInfoProviderImpl(
             isCharging = isCharging,
             chargeRateMah = null, 
             health = health,
-            capacityMah = capacityMah,   
+            capacityMah = capacityMah,
+            designCapacityMah = getDesignCapacity(),
             voltageMv = voltageMv,
             technology = getStringExtra(BatteryManager.EXTRA_TECHNOLOGY),
             cycleCount = cycleCount,

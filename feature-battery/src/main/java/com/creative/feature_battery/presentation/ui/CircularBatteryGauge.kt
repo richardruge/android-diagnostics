@@ -19,13 +19,13 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun CircularBatteryGauge(
     level: Int,
-    health: Int?, // Changed to nullable
     modifier: Modifier = Modifier,
+    health: Int? = null,
+    healthStatus: String? = null,
     size: Dp = 200.dp,
     strokeWidth: Dp = 12.dp
 ) {
@@ -117,7 +117,11 @@ fun CircularBatteryGauge(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = if (isHealthAvailable) "Health: ${health}%" else "Health: N/A",
+                text = when {
+                    isHealthAvailable -> "Health: ${health}%"
+                    !healthStatus.isNullOrEmpty() -> "Health: $healthStatus"
+                    else -> "Health: N/A"
+                },
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

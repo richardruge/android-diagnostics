@@ -5,6 +5,7 @@ interface BatterySystemDataSource {
     fun getBatteryHealth(): Int
     fun isCharging(): Boolean
     fun getCapacityMah(): Int?
+    fun getDesignCapacityMah(): Int?
     fun getCycleCount(): Int?
     fun getStateOfHealth(): Int?
 }

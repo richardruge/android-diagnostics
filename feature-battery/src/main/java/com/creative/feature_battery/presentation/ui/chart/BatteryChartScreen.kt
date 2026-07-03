@@ -66,6 +66,7 @@ fun BatteryChartScreen(
                         CircularBatteryGauge(
                             level = latestInfo?.level ?: 0,
                             health = latestInfo?.stateOfHealth,
+                            healthStatus = latestInfo?.health?.name,
                             size = 200.dp
                         )
                     }
@@ -432,7 +433,7 @@ private fun RealTimeMetricsSection(
                 modifier = Modifier.weight(1f),
                 title = "Battery Health",
                 value = info.health.name,
-                subtitle = "Severity: ${healthSeverity.name}",
+                subtitle = "Charge Cycles: ${info.cycleCount ?: "N/A"}",
                 color = when (healthSeverity) {
                     Severity.CRITICAL, Severity.HIGH -> MaterialTheme.colorScheme.error
                     Severity.MEDIUM -> Color(0xFFFFA000)
@@ -470,9 +471,9 @@ private fun RealTimeMetricsSection(
 
             MetricCard(
                 modifier = Modifier.weight(1f),
-                title = "Capacity",
+                title = "Current Charge",
                 value = info.capacityMah?.let { "$it mAh" } ?: "N/A",
-                subtitle = "Design Capacity",
+                subtitle = info.designCapacityMah?.let { "Design: $it mAh" } ?: "Remaining Capacity",
                 color = MaterialTheme.colorScheme.primary
             )
         }

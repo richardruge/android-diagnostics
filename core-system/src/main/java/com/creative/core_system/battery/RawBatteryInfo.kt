@@ -7,6 +7,7 @@ data class RawBatteryInfo(
     val chargeRateMah: Int?,
     val health: BatteryHealth,
     val capacityMah: Int?,
+    val designCapacityMah: Int?,
     val voltageMv: Int?,
     val technology: String?,
     val cycleCount: Int?,
