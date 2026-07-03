@@ -5,7 +5,9 @@ import android.graphics.drawable.Drawable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creative.feature_battery.domain.repository.BatteryRepository
+import com.creative.feature_battery.domain.repository.BatterySettingsRepository
 import com.creative.feature_battery.usage.ForegroundSessionManager
+import com.creative.feature_battery.usage.PackageUtils
 import com.creative.feature_battery.usage.UsagePermissionHelper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,8 +47,9 @@ data class AppDischargeUiModel(
 class AppDischargeViewModel(
     private val sessionManager: ForegroundSessionManager,
     private val batteryRepository: BatteryRepository,
+    private val settingsRepository: BatterySettingsRepository,
     private val permissionHelper: UsagePermissionHelper,
-    context: Context
+    private val context: Context
 ) : ViewModel() {
 
     private val packageManager = context.packageManager
@@ -58,16 +61,19 @@ class AppDischargeViewModel(
     }.flatMapLatest { capacity ->
         combine(
             sessionManager.sessionHistory,
+            settingsRepository.getSettings(),
             _selectedWindow,
             MutableStateFlow(permissionHelper.checkPermission())
-        ) { history, window, _ ->
+        ) { history, settings, window, _ ->
             val now = System.currentTimeMillis()
             val cutoff = now - window.durationMs
+            
             val filteredHistory = history.filter { it.endTime > cutoff }
             
-            val totalTrackedMah = filteredHistory.sumOf { it.totalMah }
-            
             val aggregatedSessions = filteredHistory.groupBy { it.packageName }
+                .filter { (packageName, _) ->
+                    !settings.ignoreSystemProcesses || !PackageUtils.isSystemPackage(context, packageName)
+                }
                 .map { (packageName, sessions) ->
                     val totalMah = sessions.sumOf { it.totalMah }
                     val totalDurationMs = sessions.sumOf { 
@@ -76,7 +82,7 @@ class AppDischargeViewModel(
                         if (end > start) end - start else 0L
                     }
                     
-                    val impactPercentage = if (totalTrackedMah > 0) (totalMah / totalTrackedMah) * 100.0 else 0.0
+                    val impactPercentage = if (filteredHistory.sumOf { it.totalMah } > 0) (totalMah / filteredHistory.sumOf { it.totalMah }) * 100.0 else 0.0
                     val capacityPercentage = (totalMah / capacity.toDouble()) * 100.0
                     val durationHours = totalDurationMs / 3600000.0
                     val drainRate = if (durationHours > 0) capacityPercentage / durationHours else 0.0
@@ -128,7 +134,7 @@ class AppDischargeViewModel(
             AppDischargeUiState(
                 sessions = aggregatedSessions,
                 maxMah = maxMah,
-                totalTrackedMah = totalTrackedMah,
+                totalTrackedMah = filteredHistory.sumOf { it.totalMah },
                 selectedWindow = window,
                 hasPermission = permissionHelper.checkPermission()
             )

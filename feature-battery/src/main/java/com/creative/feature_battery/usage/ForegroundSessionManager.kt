@@ -41,25 +41,13 @@ class ForegroundSessionManager(
     private val _currentPackage = MutableStateFlow<String?>(null)
     val currentPackage: StateFlow<String?> = _currentPackage.asStateFlow()
 
-    private val ignoreSystemFlow = settingsRepository.getSettings()
-        .map { it.ignoreSystemProcesses }
-        .distinctUntilChanged()
-
     init {
         startTracking()
     }
 
     private fun startTracking() {
-        combine(
-            foregroundAppFlow,
-            ignoreSystemFlow
-        ) { packageName, ignoreSystem ->
-            if (ignoreSystem && isSystemPackage(packageName)) {
-                null
-            } else {
-                packageName
-            }
-        }.distinctUntilChanged()
+        foregroundAppFlow
+            .distinctUntilChanged()
             .onEach { packageName ->
                 _currentPackage.value = packageName
                 handleAppChange(packageName)
@@ -70,23 +58,6 @@ class ForegroundSessionManager(
                 currentMa = info.currentNowMa?.toDouble() ?: 0.0
             )
         }.launchIn(scope)
-    }
-
-    private fun isSystemPackage(packageName: String?): Boolean {
-        if (packageName == null) return false
-        
-        // Heuristic: If it has a launcher intent, it's likely a user-facing app, 
-        // even if it's a system app or has a com.android prefix.
-        try {
-            val intent = context.packageManager.getLaunchIntentForPackage(packageName)
-            if (intent != null) return false
-        } catch (e: Exception) {
-            // Fallback to prefix check if PM fails
-        }
-
-        return packageName == "android" ||
-                packageName.startsWith("com.android.") ||
-                packageName.startsWith("com.google.android.")
     }
 
     private fun handleAppChange(packageName: String?) {

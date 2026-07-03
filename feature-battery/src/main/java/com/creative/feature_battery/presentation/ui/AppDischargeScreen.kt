@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -194,11 +195,14 @@ private fun AppSessionCard(session: AppDischargeUiModel, maxMah: Double) {
                         Text(
                             text = session.name,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
                         // Tiny Sparkline
                         if (session.sparklinePoints.isNotEmpty()) {
+                            Spacer(modifier = Modifier.width(8.dp))
                             Canvas(modifier = Modifier.size(width = 40.dp, height = 16.dp)) {
                                 val points = session.sparklinePoints
                                 val maxVal = points.maxOrNull()?.takeIf { it > 0 } ?: 1f
@@ -225,6 +229,8 @@ private fun AppSessionCard(session: AppDischargeUiModel, maxMah: Double) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
