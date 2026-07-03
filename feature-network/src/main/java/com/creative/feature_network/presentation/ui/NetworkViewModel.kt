@@ -17,11 +17,7 @@ class NetworkViewModel(
 
     val uiState: StateFlow<NetworkUiState> = combine(
         repository.observeNetworkState()
-            .distinctUntilChanged { old, new ->
-                old.isConnected == new.isConnected && 
-                old.signalStrengthDbm == new.signalStrengthDbm &&
-                old.type == new.type
-            }
+            .distinctUntilChanged()
             .onEach { state ->
                 state.signalStrengthDbm?.let { dbm ->
                     _signalHistory.update { (it + dbm).takeLast(50) }
