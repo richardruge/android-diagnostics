@@ -43,10 +43,6 @@ fun BatteryDebugScreen(
         ) {
             Column {
                 Text(
-                    text = "Battery History Debug",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Text(
                     text = if (selectedTab == 0) "Total records: ${history.size}" else "Total buckets: ${aggregations.size}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

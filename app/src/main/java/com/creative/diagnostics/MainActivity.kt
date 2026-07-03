@@ -131,7 +131,7 @@ class MainActivity : ComponentActivity() {
                 "battery_trends" -> "Battery Trends"
                 "battery_long_term" -> "Long-term Trends"
                 "app_discharge" -> "App Power Impact"
-                "battery_debug" -> "Battery Data Debug"
+                "battery_debug" -> "Debug Data"
                 "network" -> "Network Diagnostics"
                 "settings" -> "Settings"
                 else -> "Android Diagnostics"
@@ -207,22 +207,24 @@ class MainActivity : ComponentActivity() {
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
-                    NavigationDrawerItem(
-                        icon = { Icon(Icons.Default.BugReport, contentDescription = null) },
-                        label = { Text("Debug Data") },
-                        selected = currentDestination?.hierarchy?.any { it.route == "battery_debug" } == true,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            navController.navigate("battery_debug") {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                    if (BuildConfig.DEBUG) {
+                        NavigationDrawerItem(
+                            icon = { Icon(Icons.Default.BugReport, contentDescription = null) },
+                            label = { Text("Debug Data") },
+                            selected = currentDestination?.hierarchy?.any { it.route == "battery_debug" } == true,
+                            onClick = {
+                                scope.launch { drawerState.close() }
+                                navController.navigate("battery_debug") {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                    )
+                            },
+                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                        )
+                    }
                     NavigationDrawerItem(
                         icon = { Icon(Icons.Default.NetworkCheck, contentDescription = null) },
                         label = { Text("Network Diagnostics") },
