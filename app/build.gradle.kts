@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.creative.diagnostics"
+    namespace = "com.creative.omnigauge"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.creative.diagnostics"
+        applicationId = "com.creative.omnigauge"
         minSdk = 29
         //noinspection OldTargetApi
         targetSdk = 35

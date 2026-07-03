@@ -1,4 +1,4 @@
-package com.creative.diagnostics
+package com.creative.omnigauge
 
 import android.app.Application
 import com.creative.core_data.dataModule
@@ -20,7 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.core.content.edit
 
-class DiagnosticsApp : Application() {
+class OmniGaugeApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
@@ -41,7 +41,7 @@ class DiagnosticsApp : Application() {
             startKoin {
                 // Log Koin events to logcat
                 androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.ERROR)
-                androidContext(this@DiagnosticsApp)
+                androidContext(this@OmniGaugeApp)
                 modules(
                     systemModule,
                     batterySystemModule,

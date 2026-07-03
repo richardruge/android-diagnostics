@@ -1,4 +1,4 @@
-package com.creative.diagnostics
+package com.creative.omnigauge
 
 import org.junit.Test
 
