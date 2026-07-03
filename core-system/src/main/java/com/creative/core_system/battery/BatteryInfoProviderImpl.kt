@@ -41,15 +41,39 @@ class BatteryInfoProviderImpl(
 
     @android.annotation.SuppressLint("PrivateApi")
     private fun getDesignCapacity(): Int? {
-        return try {
+        val fromProfile = try {
             val powerProfileClass = Class.forName("com.android.internal.os.PowerProfile")
             val powerProfile = powerProfileClass.getConstructor(Context::class.java).newInstance(context)
             val batteryCapacity = powerProfileClass.getMethod("getBatteryCapacity").invoke(powerProfile) as Double
-            batteryCapacity.toInt()
+            batteryCapacity.toInt().takeIf { it > 0 }
         } catch (_: Exception) {
             // PowerProfile is an internal API and may be restricted on some devices/Android versions
             null
         }
+
+        return fromProfile ?: getDesignCapacityFromSysfs()
+    }
+
+    private fun getDesignCapacityFromSysfs(): Int? {
+        val paths = listOf(
+            "/sys/class/power_supply/battery/charge_full_design",
+            "/sys/class/power_supply/battery/capacity_design"
+        )
+        for (path in paths) {
+            try {
+                val file = java.io.File(path)
+                if (file.exists()) {
+                    val value = file.readText().trim().toLong()
+                    if (value > 0) {
+                        // charge_full_design is often in uAh (microampere-hours)
+                        return if (value > 100_000) (value / 1000).toInt() else value.toInt()
+                    }
+                }
+            } catch (_: Exception) {
+                // Ignore and try next path
+            }
+        }
+        return null
     }
 
     private fun Intent.toRawBatteryInfo(): RawBatteryInfo {
