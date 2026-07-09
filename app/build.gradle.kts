@@ -19,9 +19,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("C:/Users/rruge/AndroidStudioProjects/omnigauge")
+            storePassword = "x0Dh1IRw6Cu2wJ"
+            keyAlias = "key0"
+            keyPassword = "x0Dh1IRw6Cu2wJ"
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true // Enables ProGuard/R8
+            isShrinkResources = true // Removes unused resources
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
