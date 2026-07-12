@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.timber)
+    implementation(libs.google.play.services.ads)
     implementation(projects.coreModel)
     implementation(projects.coreData)
     implementation(projects.coreSystem)

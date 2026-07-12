@@ -1,6 +1,7 @@
 package com.creative.omnigauge
 
 import android.app.Application
+import com.google.android.gms.ads.MobileAds
 import com.creative.core_data.dataModule
 import com.creative.core_system.battery.batterySystemModule
 import com.creative.core_system.systemModule
@@ -28,6 +29,8 @@ class OmniGaugeApp : Application() {
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
+
+        MobileAds.initialize(this)
 
         // Setup global exception handler to catch and log any unhandled crashes
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()

@@ -30,6 +30,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OmniGauge">
 
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-8824466305693840~2023976761"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

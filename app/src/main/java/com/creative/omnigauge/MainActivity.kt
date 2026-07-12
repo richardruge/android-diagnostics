@@ -51,6 +51,7 @@ import com.creative.feature_battery.presentation.ui.BatterySettingsScreen
 import com.creative.feature_battery.presentation.ui.AppDischargeScreen
 import com.creative.feature_battery.service.BatteryMonitoringService
 import com.creative.feature_network.presentation.ui.NetworkScreen
+import com.creative.omnigauge.ui.AdBanner
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -262,6 +263,9 @@ class MainActivity : ComponentActivity() {
                             containerColor = MaterialTheme.colorScheme.surface,
                         )
                     )
+                },
+                bottomBar = {
+                    AdBanner()
                 }
             ) { innerPadding ->
                 Surface(
