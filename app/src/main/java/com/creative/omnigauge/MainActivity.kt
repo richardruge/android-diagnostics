@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.History
@@ -134,7 +135,7 @@ class MainActivity : ComponentActivity() {
                 "app_discharge" -> "App Power Impact"
                 "battery_debug" -> "Debug Data"
                 "network" -> "Network Diagnostics"
-                "settings" -> "Settings"
+                "settings" -> "Battery Settings"
                 else -> "OmniGauge"
             }
         }
@@ -250,13 +251,25 @@ class MainActivity : ComponentActivity() {
                     CenterAlignedTopAppBar(
                         title = { Text(title) },
                         navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            if (currentDestination?.route == "settings") {
+                                IconButton(onClick = { navController.popBackStack() }) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                }
+                            } else {
+                                IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                                }
                             }
                         },
                         actions = {
-                            IconButton(onClick = { navController.navigate("settings") }) {
-                                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            if (currentDestination?.route != "settings") {
+                                IconButton(onClick = {
+                                    navController.navigate("settings") {
+                                        launchSingleTop = true
+                                    }
+                                }) {
+                                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                                }
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -307,7 +320,7 @@ class MainActivity : ComponentActivity() {
                             BatteryDebugScreen()
                         }
                         composable("settings") {
-                            BatterySettingsScreen(onBack = { navController.popBackStack() })
+                            BatterySettingsScreen()
                         }
                     }
                 }
