@@ -1,6 +1,7 @@
 package com.creative.omnigauge
 
 import android.app.Application
+import android.content.pm.ApplicationInfo
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
 import com.creative.core_data.dataModule
@@ -21,7 +22,8 @@ class OmniGaugeApp : Application() {
         super.onCreate()
 
         // Initialize Timber for logging
-        if (BuildConfig.DEBUG) {
+        val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        if (isDebuggable) {
             Timber.plant(Timber.DebugTree())
         }
 
@@ -45,7 +47,7 @@ class OmniGaugeApp : Application() {
         try {
             startKoin {
                 // Log Koin events to logcat
-                androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.ERROR)
+                androidLogger(if (isDebuggable) Level.DEBUG else Level.ERROR)
                 androidContext(this@OmniGaugeApp)
                 modules(
                     systemModule,

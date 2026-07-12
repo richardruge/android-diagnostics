@@ -48,5 +48,6 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.profileinstaller)
     implementation(project(":core-data"))
 }

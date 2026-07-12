@@ -48,6 +48,8 @@ import com.creative.feature_battery.presentation.ui.BatterySettingsScreen
 import com.creative.feature_battery.presentation.ui.AppDischargeScreen
 import com.creative.feature_battery.service.BatteryMonitoringService
 import com.creative.feature_network.presentation.ui.NetworkScreen
+import android.content.pm.ApplicationInfo
+import androidx.compose.ui.platform.LocalContext
 import com.creative.omnigauge.ui.AdBanner
 import com.creative.feature_battery.data.history.BatteryHistoryDatabase
 import com.creative.feature_battery.data.history.DataMigrationManager
@@ -133,6 +135,8 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun MainContent() {
+        val context = LocalContext.current
+        val isDebug = remember { (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0 }
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
@@ -252,7 +256,7 @@ class MainActivity : ComponentActivity() {
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
-                    if (BuildConfig.DEBUG) {
+                    if (isDebug) {
                         NavigationDrawerItem(
                             icon = { Icon(Icons.Default.BugReport, contentDescription = null) },
                             label = { Text("Debug Data") },
@@ -359,8 +363,10 @@ class MainActivity : ComponentActivity() {
                         composable("network") {
                             NetworkScreen()
                         }
-                        composable("battery_debug") {
-                            BatteryDebugScreen()
+                        if (isDebug) {
+                            composable("battery_debug") {
+                                BatteryDebugScreen()
+                            }
                         }
                         composable("settings") {
                             BatterySettingsScreen()

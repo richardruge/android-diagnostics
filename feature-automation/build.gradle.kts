@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.profileinstaller)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.koin.core)
     implementation(libs.koin.android)

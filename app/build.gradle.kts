@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.timber)
     implementation(libs.google.play.services.ads)
+    implementation(libs.androidx.profileinstaller)
     implementation(projects.coreModel)
     implementation(projects.coreData)
     implementation(projects.coreSystem)
