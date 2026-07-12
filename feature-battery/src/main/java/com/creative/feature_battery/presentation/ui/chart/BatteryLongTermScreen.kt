@@ -56,7 +56,7 @@ fun BatteryLongTermScreen(
                 )
             }
         } else {
-            key(selectedWindow) {
+            key(uiState.window) {
                 OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
@@ -75,7 +75,7 @@ fun BatteryLongTermScreen(
                 }
             }
 
-            key(selectedWindow) {
+            key(uiState.window) {
                 OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
@@ -94,7 +94,7 @@ fun BatteryLongTermScreen(
                 }
             }
 
-            key(selectedWindow) {
+            key(uiState.window) {
                 OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
@@ -114,7 +114,7 @@ fun BatteryLongTermScreen(
                 }
             }
 
-            key(selectedWindow) {
+            key(uiState.window) {
                 OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
