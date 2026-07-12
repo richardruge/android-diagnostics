@@ -26,8 +26,8 @@ fun CircularBatteryGauge(
     modifier: Modifier = Modifier,
     health: Int? = null,
     healthStatus: String? = null,
-    size: Dp = 200.dp,
-    strokeWidth: Dp = 12.dp
+    size: Dp = 160.dp,
+    strokeWidth: Dp = 10.dp
 ) {
     val animatedLevel by animateFloatAsState(
         targetValue = level.toFloat(),
@@ -112,7 +112,7 @@ fun CircularBatteryGauge(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "${level}%",
-                style = MaterialTheme.typography.displayMedium,
+                style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )

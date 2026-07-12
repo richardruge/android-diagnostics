@@ -66,8 +66,7 @@ fun BatteryChartScreen(
                         CircularBatteryGauge(
                             level = latestInfo?.level ?: 0,
                             health = latestInfo?.stateOfHealth,
-                            healthStatus = latestInfo?.health?.name,
-                            size = 200.dp
+                            healthStatus = latestInfo?.health?.name
                         )
                     }
                     RealTimeMetricsSection(latestInfo, healthSeverity, thermalStatus)
