@@ -28,11 +28,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
@@ -53,10 +49,15 @@ import com.creative.feature_battery.presentation.ui.AppDischargeScreen
 import com.creative.feature_battery.service.BatteryMonitoringService
 import com.creative.feature_network.presentation.ui.NetworkScreen
 import com.creative.omnigauge.ui.AdBanner
+import com.creative.feature_battery.data.history.BatteryHistoryDatabase
+import com.creative.feature_battery.data.history.DataMigrationManager
 import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
+
+    private val migrationManager: DataMigrationManager by inject()
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -67,13 +68,18 @@ class MainActivity : ComponentActivity() {
             true
         }
         if (notificationsGranted) {
-            startBatteryService()
+            checkMigrationAndStartService()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        // Check if DB version changed and we need to ask the user
+        if (migrationManager.checkMigrationNeeded("battery_history.db", BatteryHistoryDatabase.VERSION)) {
+            migrationManager.setMigrationChoicePending("battery_history.db", true)
+        }
 
         val permissionsToRequest = mutableListOf<String>()
         
@@ -97,7 +103,7 @@ class MainActivity : ComponentActivity() {
         if (permissionsToRequest.isNotEmpty()) {
             requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
         } else {
-            startBatteryService()
+            checkMigrationAndStartService()
         }
 
         setContent {
@@ -118,6 +124,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun checkMigrationAndStartService() {
+        if (!migrationManager.isMigrationChoicePending("battery_history.db")) {
+            startBatteryService()
+        }
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun MainContent() {
@@ -126,6 +138,37 @@ class MainActivity : ComponentActivity() {
         val currentDestination = navBackStackEntry?.destination
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
+
+        var showMigrationDialog by remember { 
+            mutableStateOf(migrationManager.isMigrationChoicePending("battery_history.db")) 
+        }
+
+        if (showMigrationDialog) {
+            AlertDialog(
+                onDismissRequest = { },
+                title = { Text("Database Update Required") },
+                text = { Text("We have updated our internal data models. Would you like to keep your existing battery history data and attempt an automatic update, or start with a fresh database?") },
+                confirmButton = {
+                    Button(onClick = {
+                        migrationManager.markMigrationHandled("battery_history.db")
+                        showMigrationDialog = false
+                        startBatteryService()
+                    }) {
+                        Text("Keep & Update")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        migrationManager.requestWipe("battery_history.db")
+                        migrationManager.markMigrationHandled("battery_history.db")
+                        showMigrationDialog = false
+                        startBatteryService()
+                    }) {
+                        Text("Start Fresh")
+                    }
+                }
+            )
+        }
         
         val title = remember(currentDestination) {
             when (currentDestination?.route) {

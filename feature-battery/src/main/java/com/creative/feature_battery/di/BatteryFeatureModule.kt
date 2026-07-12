@@ -7,7 +7,9 @@ import com.creative.feature_battery.data.BatteryRepositoryImpl
 import com.creative.feature_battery.data.BatterySettingsRepositoryImpl
 import com.creative.feature_battery.data.history.BatteryHistoryDatabase
 import com.creative.feature_battery.data.history.BatteryHistoryRepositoryImpl
+import com.creative.feature_battery.data.history.DataMigrationManager
 import com.creative.feature_battery.domain.BatterySeverityEvaluator
+import timber.log.Timber
 import com.creative.feature_battery.domain.repository.BatteryHistoryRepository
 import com.creative.feature_battery.domain.repository.BatteryRepository
 import com.creative.feature_battery.domain.repository.BatterySettingsRepository
@@ -54,14 +56,27 @@ val batteryFeatureModule = module {
         }
     }
 
+    single { DataMigrationManager(get()) }
+
     single {
+        val context: android.content.Context = get()
+        val dbName = "battery_history.db"
+        val migrationManager: DataMigrationManager = get()
+        
+        // If the user previously chose to wipe data because of a model change
+        if (migrationManager.isWipeRequested(dbName)) {
+            Timber.w("Wiping database $dbName as requested by user due to model change.")
+            context.deleteDatabase(dbName)
+            migrationManager.clearWipeRequest(dbName)
+        }
+
         Room.databaseBuilder(
-            get(),
+            context,
             BatteryHistoryDatabase::class.java,
-            "battery_history.db"
+            dbName
         )
             .addMigrations(migration7to8, migration8to9)
-            .fallbackToDestructiveMigration(true)
+            .fallbackToDestructiveMigration(false) // Disable automatic destructive migration
             .fallbackToDestructiveMigrationOnDowngrade(true)
             .build()
     }

@@ -9,11 +9,15 @@ import androidx.room.RoomDatabase
         BatteryAggregationEntity::class,
         AppUsageEntity::class,
     ],
-    version = 9,
+    version = BatteryHistoryDatabase.VERSION,
     exportSchema = true
 )
 abstract class BatteryHistoryDatabase : RoomDatabase() {
     abstract fun dao(): BatteryHistoryDao
     abstract fun aggregationDao(): BatteryAggregationDao
     abstract fun usageDao(): AppUsageDao
+
+    companion object {
+        const val VERSION = 9
+    }
 }
