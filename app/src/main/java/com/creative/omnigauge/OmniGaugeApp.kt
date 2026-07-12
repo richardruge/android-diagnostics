@@ -2,6 +2,7 @@ package com.creative.omnigauge
 
 import android.app.Application
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
 import com.creative.core_data.dataModule
 import com.creative.core_system.battery.batterySystemModule
 import com.creative.core_system.systemModule
@@ -29,6 +30,13 @@ class OmniGaugeApp : Application() {
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
+
+        // Set this device as a test device to avoid "No Fill" errors (Error Code 3)
+        val testDeviceIds = listOf("F6B6DCE3CA5F574BC0D4274C5A862BE2")
+        val configuration = RequestConfiguration.Builder()
+            .setTestDeviceIds(testDeviceIds)
+            .build()
+        MobileAds.setRequestConfiguration(configuration)
 
         MobileAds.initialize(this)
 
